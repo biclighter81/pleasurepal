@@ -1,18 +1,10 @@
-<<<<<<< HEAD
 # compiled output
 /dist
 /node_modules
-
-=======
->>>>>>> db9d4dfdcbbf405994c06df61657799965fdba07
 # Logs
 logs
 *.log
 npm-debug.log*
-<<<<<<< HEAD
-pnpm-debug.log*
-=======
->>>>>>> db9d4dfdcbbf405994c06df61657799965fdba07
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
@@ -40,7 +32,6 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-=======
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
@@ -137,4 +128,4 @@ dist
 
 # TernJS port file
 .tern-port
->>>>>>> db9d4dfdcbbf405994c06df61657799965fdba07
+
