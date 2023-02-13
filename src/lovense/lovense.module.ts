@@ -13,7 +13,7 @@ import { LovenseService } from './lovense.service';
     DiscordModule.forFeature(),
   ],
   controllers: [LovenseController],
-  providers: [LovenseService, DiscordService],
+  providers: [LovenseService],
   exports: [],
 })
 export class LovenseModule {}

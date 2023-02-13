@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@discord-nestjs/common": "^5.1.4",
     "@discord-nestjs/core": "^5.2.1",
     "@keycloak/keycloak-admin-client": "^20.0.3",
     "@nestjs/common": "^9.0.0",

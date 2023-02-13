@@ -5,13 +5,21 @@ import { LovenseCredentials } from 'src/lovense/entities/lovense-credentials.ent
 import { LovenseToy } from 'src/lovense/entities/lovense-toy.entity';
 import { LovenseService } from 'src/lovense/lovense.service';
 import { HelloWorldCommand } from './commands/hello-world.command';
-import { DiscordService } from './discord.service';
+import { LinkCommand } from './commands/link.command';
+import { PleasureCommand } from './commands/pleasure';
+import { UnlinkCommand } from './commands/unlink.command';
 
 @Module({
   imports: [
-    DiscordModule.forFeature(),
     TypeOrmModule.forFeature([LovenseCredentials, LovenseToy]),
+    DiscordModule.forFeature(),
   ],
-  providers: [HelloWorldCommand, LovenseService, DiscordService],
+  providers: [
+    LovenseService,
+    HelloWorldCommand,
+    LinkCommand,
+    UnlinkCommand,
+    PleasureCommand,
+  ],
 })
 export class SlashCommandsModule {}

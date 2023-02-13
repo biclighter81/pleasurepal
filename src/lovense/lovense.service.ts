@@ -6,8 +6,9 @@ import { LovenseCredentials } from './entities/lovense-credentials.entity';
 import { LovenseToy } from './entities/lovense-toy.entity';
 import axios from 'axios';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
-import { DiscordService } from 'src/discord/discord.service';
 import { getDiscordUidByKCId } from 'src/lib/keycloak';
+import { InjectDiscordClient } from '@discord-nestjs/core';
+import { Client } from 'discord.js';
 
 @Injectable()
 export class LovenseService {
@@ -18,11 +19,11 @@ export class LovenseService {
     private readonly lovenseCredRepo: Repository<LovenseCredentials>,
     @InjectRepository(LovenseToy)
     private readonly lovenseToyRepo: Repository<LovenseToy>,
-    private readonly discordSrv: DiscordService,
+    @InjectDiscordClient()
+    private readonly discordClient: Client,
   ) {}
 
   async callback(body: LovenseCredentialsDto) {
-    console.log('heartbeat', JSON.stringify(body));
     const existingCreds = await this.lovenseCredRepo.findOne({
       relations: ['toys'],
       where: { uid: body.uid },
@@ -46,7 +47,14 @@ export class LovenseService {
     ) {
       const discordUid = await getDiscordUidByKCId(body.uid);
       if (!discordUid) return credentials;
-      await this.discordSrv.sendMessageToUser(
+      if (!credentials.toys.length) {
+        await this.sendDiscordMessageToUser(
+          discordUid,
+          `Your Lovense toys have been unlinked from your account!`,
+        );
+        return credentials;
+      }
+      await this.sendDiscordMessageToUser(
         discordUid,
         `Your Lovense toy(s): ${toys
           .map((t) => t.nickName || t.name)
@@ -61,6 +69,10 @@ export class LovenseService {
       relations: ['toys'],
       where: { uid: kcId },
     });
+  }
+
+  async deleteCredentials(kcId: string) {
+    return this.lovenseCredRepo.delete({ uid: kcId });
   }
 
   async getLinkQrCode(kcId: string, username: string): Promise<QRCodeResponse> {
@@ -78,5 +90,10 @@ export class LovenseService {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  async sendDiscordMessageToUser(discordUid: string, message: string) {
+    const user = await this.discordClient.users.fetch(discordUid);
+    await user.send(message);
   }
 }
