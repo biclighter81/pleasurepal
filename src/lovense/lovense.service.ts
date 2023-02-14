@@ -8,7 +8,8 @@ import axios from 'axios';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { getDiscordUidByKCId } from 'src/lib/keycloak';
 import { InjectDiscordClient } from '@discord-nestjs/core';
-import { Client } from 'discord.js';
+import { Client, MessageCreateOptions } from 'discord.js';
+import { LovenseFunctionCommand } from './dto/lovense-command.dto';
 
 @Injectable()
 export class LovenseService {
@@ -95,5 +96,75 @@ export class LovenseService {
   async sendDiscordMessageToUser(discordUid: string, message: string) {
     const user = await this.discordClient.users.fetch(discordUid);
     await user.send(message);
+  }
+
+  async getDiscordUser(discordUid: string) {
+    return await this.discordClient.users.fetch(discordUid);
+  }
+
+  async sendLovenseFunction(
+    command: {
+      kcId: string;
+    } & LovenseFunctionCommand,
+  ) {
+    const creds = await this.getCredentials(command.kcId);
+    if (!creds) throw new Error('No credentials found');
+    const res = await axios.post(
+      `https://api.lovense-api.com/api/lan/v2/command`,
+      {
+        command: 'Function',
+        token: process.env.LOVENSE_API_TOKEN,
+        uid: command.kcId,
+        action: command.action + ':' + (command.intensity || 5),
+        timeSec: command.timeSec,
+        loopRunningSec: command.loopRunningSec,
+        loopPauseSec: command.loopPauseSec,
+        stopPrevious: command.stopPrevious ? 1 : 0,
+      },
+    );
+    return res.data;
+  }
+
+  async sendSessionRequest(discordUid: string, kcId: string) {
+    const creds = await this.getCredentials(kcId);
+    (await this.discordClient.users.fetch(discordUid)).send({
+      content: `You have been invited to a Lovense session!`,
+
+      components: [
+        {
+          type: 1,
+          components: [
+            {
+              type: 3,
+              custom_id: 'lovense_toys',
+              label: 'Select a toy',
+              placeholder: 'Select a toy',
+              options: creds.toys.map((t) => ({
+                label: t.nickName || t.name,
+                value: t.id,
+                description: t.name,
+              })),
+            },
+          ],
+        },
+        {
+          type: 1,
+          components: [
+            {
+              type: 2,
+              style: 1,
+              label: 'Accept invite',
+              custom_id: 'lovense_accept',
+            },
+            {
+              type: 2,
+              style: 4,
+              label: 'Decline invite',
+              custom_id: 'lovense_decline',
+            },
+          ],
+        },
+      ],
+    });
   }
 }

@@ -11,27 +11,43 @@ export enum PleasureActionOptions {
 }
 
 export class PleasureCommandDto {
-  @Param({ description: 'User 1', type: ParamType.USER, required: true })
-  user: any[];
+  @Param({ description: 'User 1', type: ParamType.USER, required: false })
+  user: string;
   @Param({ description: 'User 2', type: ParamType.USER, required: false })
-  user2: any[];
+  user2: string;
   @Param({ description: 'User 3', type: ParamType.USER, required: false })
-  user3: any[];
+  user3: string;
   @Param({ description: 'User 4', type: ParamType.USER, required: false })
-  user4: any[];
+  user4: string;
   @Param({ description: 'User 5', type: ParamType.USER, required: false })
-  user5: any[];
-  @Param({ description: 'User 6', type: ParamType.USER, required: false })
-  user6: any[];
-  @Param({ description: 'User 7', type: ParamType.USER, required: false })
-  user7: any[];
-  @Param({ description: 'User 8', type: ParamType.USER, required: false })
-  user8: any[];
-  @Param({ description: 'User 9', type: ParamType.USER, required: false })
-  user9: any[];
-  @Param({ description: 'User 10', type: ParamType.USER, required: false })
-  user10: any[];
+  user5: string;
+  @Param({
+    description: 'Channel session',
+    type: ParamType.BOOLEAN,
+    required: false,
+  })
+  channelsession: boolean;
   @Choice(PleasureActionOptions)
-  @Param({ description: 'Action', type: ParamType.INTEGER })
+  @Param({ description: 'Action', type: ParamType.INTEGER, required: true })
   action: PleasureActionOptions;
+  @Param({ description: 'Intensity', type: ParamType.INTEGER, required: false })
+  intensity: number;
+  @Param({
+    description: 'Duration in seconds',
+    type: ParamType.INTEGER,
+    required: true,
+  })
+  duration: number;
+  @Param({
+    description: 'Loop time in seconds',
+    type: ParamType.INTEGER,
+    required: true,
+  })
+  looprunningsec: number;
+  @Param({
+    description: 'Pause time between loops in seconds',
+    type: ParamType.INTEGER,
+    required: true,
+  })
+  looppausesec: number;
 }

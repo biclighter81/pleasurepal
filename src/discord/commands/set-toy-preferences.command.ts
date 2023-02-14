@@ -4,7 +4,6 @@ import { SlashCommandPipe } from '@discord-nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LovenseService } from 'src/lovense/lovense.service';
-import { LinkCommandDto, RelinkOptions } from '../command-dto/link-command.dto';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 import {

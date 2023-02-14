@@ -4,7 +4,7 @@ import { SlashCommandPipe } from '@discord-nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LovenseService } from 'src/lovense/lovense.service';
-import { LinkCommandDto, RelinkOptions } from '../command-dto/link-command.dto';
+import { LinkCommandDto } from '../command-dto/link-command.dto';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 import {
@@ -33,7 +33,7 @@ export class LinkCommand {
       return;
     }
     const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
-    if (credentials && dto.force != RelinkOptions.yes) {
+    if (credentials && !dto.force) {
       await interaction.reply(LOVENSE_ACCOUNT_ALREADY_LINKED);
       return;
     }

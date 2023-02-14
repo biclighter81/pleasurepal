@@ -1,6 +1,6 @@
 import { InjectDiscordClient, On, Once } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { Client, Message } from 'discord.js';
+import { ChatInputCommandInteraction, Client, Message } from 'discord.js';
 
 @Injectable()
 export class DiscordService {
