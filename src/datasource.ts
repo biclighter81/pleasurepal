@@ -1,5 +1,7 @@
 import { DataSource } from 'typeorm';
+import { LovenseCredentials_DiscordSession } from './lovense/entities/credentials_discord_session.join-entity';
 import { LovenseCredentials } from './lovense/entities/lovense-credentials.entity';
+import { LovenseDiscordSession } from './lovense/entities/lovense-discord-session.entity';
 import { LovenseToy } from './lovense/entities/lovense-toy.entity';
 
 // eslint-disable-next-line
@@ -12,7 +14,12 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  entities: [LovenseCredentials, LovenseToy],
+  entities: [
+    LovenseCredentials,
+    LovenseToy,
+    LovenseDiscordSession,
+    LovenseCredentials_DiscordSession,
+  ],
   schema: process.env.DB_SCHEMA,
   synchronize: true,
   logging: process.env.LOG_LEVELS

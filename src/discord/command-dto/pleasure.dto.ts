@@ -11,22 +11,6 @@ export enum PleasureActionOptions {
 }
 
 export class PleasureCommandDto {
-  @Param({ description: 'User 1', type: ParamType.USER, required: false })
-  user: string;
-  @Param({ description: 'User 2', type: ParamType.USER, required: false })
-  user2: string;
-  @Param({ description: 'User 3', type: ParamType.USER, required: false })
-  user3: string;
-  @Param({ description: 'User 4', type: ParamType.USER, required: false })
-  user4: string;
-  @Param({ description: 'User 5', type: ParamType.USER, required: false })
-  user5: string;
-  @Param({
-    description: 'Channel session',
-    type: ParamType.BOOLEAN,
-    required: false,
-  })
-  channelsession: boolean;
   @Choice(PleasureActionOptions)
   @Param({ description: 'Action', type: ParamType.INTEGER, required: true })
   action: PleasureActionOptions;

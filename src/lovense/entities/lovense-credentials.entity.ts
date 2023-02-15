@@ -2,11 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { LovenseCredentials_DiscordSession } from './credentials_discord_session.join-entity';
+import { LovenseDiscordSession } from './lovense-discord-session.entity';
 import { LovenseToy } from './lovense-toy.entity';
 
 @Entity('lovense_credentials')
@@ -37,6 +41,12 @@ export class LovenseCredentials {
   @ManyToMany(() => LovenseToy, (toy) => toy.credentials)
   @JoinTable()
   toys: LovenseToy[];
+
+  @OneToMany(
+    () => LovenseCredentials_DiscordSession,
+    (join) => join.lovenseCredentials,
+  )
+  sessions: LovenseCredentials_DiscordSession[];
 
   @UpdateDateColumn()
   updatedAt: Date;
