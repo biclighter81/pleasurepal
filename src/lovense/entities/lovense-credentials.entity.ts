@@ -37,6 +37,8 @@ export class LovenseCredentials {
   version: string;
   @Column()
   platform: string;
+  @Column({ default: 'false' })
+  unlinked: boolean;
 
   @ManyToMany(() => LovenseToy, (toy) => toy.credentials)
   @JoinTable()

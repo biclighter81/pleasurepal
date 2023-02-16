@@ -20,6 +20,8 @@ import {
 import { LovenseFunctionCommand } from './dto/lovense-command.dto';
 import { LovenseCredentials_DiscordSession } from './entities/credentials_discord_session.join-entity';
 import { LovenseDiscordSession } from './entities/lovense-discord-session.entity';
+import { LOVENSE_QR_CODE_GENERATION_ERROR } from 'src/lib/constants';
+import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 
 @Injectable()
 export class LovenseService {
@@ -32,6 +34,8 @@ export class LovenseService {
     private readonly lovenseToyRepo: Repository<LovenseToy>,
     @InjectRepository(LovenseDiscordSession)
     private readonly lovenseDiscordSessionRepo: Repository<LovenseDiscordSession>,
+    @InjectRepository(LovenseCredentials_DiscordSession)
+    private readonly lovenseCredDiscordSessionRepo: Repository<LovenseCredentials_DiscordSession>,
     @InjectDiscordClient()
     private readonly discordClient: Client,
   ) {}
@@ -41,6 +45,7 @@ export class LovenseService {
       relations: ['toys'],
       where: { uid: body.uid },
     });
+    if (existingCreds?.unlinked) return;
     const toys = await this.lovenseToyRepo.save(
       Object.keys(body.toys).map((key) => ({
         id: key,
@@ -56,7 +61,14 @@ export class LovenseService {
     // Send success message to user if this is the first time linking or if the toys changed
     if (
       !existingCreds ||
-      existingCreds.toys.sort().join() !== toys.sort().join()
+      existingCreds.toys
+        .sort()
+        .map((t) => t.nickName || t.name)
+        .join() !==
+        toys
+          .sort()
+          .map((t) => t.nickName || t.name)
+          .join()
     ) {
       const discordUid = await getDiscordUidByKCId(body.uid);
       if (!discordUid) return credentials;
@@ -84,12 +96,23 @@ export class LovenseService {
     });
   }
 
-  async deleteCredentials(kcId: string) {
-    return this.lovenseCredRepo.delete({ uid: kcId });
+  async unlinkLovense(kcId: string) {
+    await this.lovenseCredDiscordSessionRepo.update(
+      {
+        lovenseCredentialsUid: kcId,
+      },
+      { active: false },
+    );
+    return this.lovenseCredRepo.update(
+      { uid: kcId },
+      { unlinked: true, toys: [] },
+    );
   }
 
   async getLinkQrCode(kcId: string, username: string): Promise<QRCodeResponse> {
     try {
+      //reset unlinked flag if it was set
+      await this.lovenseCredRepo.update({ uid: kcId }, { unlinked: false });
       const res = await axios.post<QRCodeResponse>(
         `https://api.lovense-api.com/api/lan/getQrCode`,
         {
@@ -103,6 +126,29 @@ export class LovenseService {
       this.logger.error(e);
       throw e;
     }
+  }
+
+  //called by frontend after identifying with discord
+  async sendLovenseQRCode(discordUId: string) {
+    const user = await this.discordClient.users.fetch(discordUId);
+    const kcUser = await getKCUserByDiscordId(discordUId);
+    if (!kcUser) {
+      throw new Error('Discord user not found in Keycloak');
+    }
+    let qr: QRCodeResponse;
+    try {
+      qr = await this.getLinkQrCode(kcUser.id, kcUser.username);
+    } catch (e) {
+      await user.send(LOVENSE_QR_CODE_GENERATION_ERROR);
+      return;
+    }
+    const embedBuilder = buildLovenseQrCodeEmbed(
+      qr.message,
+      'Pleasurepal identification successful! Now link your Lovense toys to your account!',
+    );
+    await user.send({
+      embeds: [embedBuilder.toJSON()],
+    });
   }
 
   async sendDiscordMessageToUser(discordUid: string, message: string) {
@@ -187,7 +233,7 @@ export class LovenseService {
         active: false,
       },
     );
-    let session: LovenseDiscordSession;
+    let userCredentials: LovenseCredentials[] = [];
     for (const uid of uids) {
       const kcUser = await getKCUserByDiscordId(uid);
       // Handle users that have not linked their discord accounts
@@ -197,18 +243,20 @@ export class LovenseService {
       });
       // Handle users that have not linked their lovense accounts
       if (!creds) continue;
-      session = await this.lovenseDiscordSessionRepo.save(
-        {
-          initiatorId: initiator.id,
-          credentials: [
-            {
-              lovenseCredentialsUid: creds.uid,
-            },
-          ],
-        },
-        {},
-      );
+      userCredentials.push(creds);
     }
+    const session = await this.lovenseDiscordSessionRepo.save(
+      {
+        initiatorId: initiator.id,
+        credentials: userCredentials.map((c) => {
+          return {
+            lovenseCredentialsUid: c.uid,
+            inviteAccepted: c.uid == initiator.id,
+          };
+        }),
+      },
+      {},
+    );
     return session;
   }
 
@@ -220,10 +268,12 @@ export class LovenseService {
     const initiator = await this.discordClient.users.fetch(initiatorUid);
     // Fetch KC users from discord ids
     const invitedUsers = await Promise.all(
-      uids.map(async (uid) => {
-        const user = await this.discordClient.users.fetch(uid);
-        return user;
-      }),
+      uids
+        .filter((uid) => uid != initiator.id)
+        .map(async (uid) => {
+          const user = await this.discordClient.users.fetch(uid);
+          return user;
+        }),
     );
     // Create session
     const session = await this.createSession(uids, initiatorUid);
@@ -233,13 +283,19 @@ export class LovenseService {
       // Handle users that have not linked their discord accounts
       if (!kcUser) {
         await user.send(
-          `You have not linked your discord account with your pleasurepal account! If you don't have a pleasurepal account, please create one at https://pleasurepal.de/ and link it with your discord account!`,
+          `You have been invited to a pleasurepal session by \`@${initiator.username}\`, but you have not linked your discord account with your pleasurepal account or worse: You maybe don't even have a pleasurepal account! Please register under https://pleasurepal.de/ and link your discord account under https://pleasurepal.de/profile.`,
         );
         continue;
       }
       const creds = await this.lovenseCredRepo.findOne({
         where: { uid: kcUser.id },
       });
+      if (!creds) {
+        await user.send(
+          `You have been invited to a pleasurepal session by \`@${initiator.username}\`, but you have not linked your lovense account with your pleasurepal account! Please link your lovense account under https://pleasurepal.de/profile.`,
+        );
+        continue;
+      }
       const msg = await user.send({
         content: `\`@${
           initiator.username
@@ -270,45 +326,44 @@ export class LovenseService {
       });
       const buttonCollector = msg.createMessageComponentCollector({
         componentType: ComponentType.Button,
-        time: 60000,
+        time: 30000,
       });
       buttonCollector.on('collect', async (i) => {
         if (i.customId == 'joinSession') {
           //User has accepted the session
           //Update session to add user
-          const s = await this.lovenseDiscordSessionRepo.save({
-            id: session.id,
-            credentials: [
-              ...session.credentials,
-              {
-                lovenseCredentialsUid: creds.uid,
-                inviteAccepted: true,
-                lastActive: new Date(),
-              },
-            ],
+          await this.lovenseCredDiscordSessionRepo.save({
+            lovenseCredentialsUid: creds.uid,
+            lovenseDiscordSessionId: session.id,
+            inviteAccepted: true,
+            lastActive: new Date(),
           });
 
           initiatorInteraction.followUp({
             content: `\`@${user.username}\` has joined the session!`,
-            ephemeral: true,
           });
           i.reply({
-            content: `You have joined the session \`${s.id}\`!\nYou can leave the session by typing \`/leave\`.`,
-            ephemeral: true,
+            content: `You have joined the session \`${session.id}\`!\nYou can leave the session by typing \`/leave\`.`,
           });
         }
         if (i.customId == 'declineSession') {
           //User has declined the session
           initiatorInteraction.followUp({
             content: `\`@${user.username}\` has declined the session!`,
-            ephemeral: true,
           });
           i.reply({
             content: `You have declined the session!`,
-            ephemeral: true,
+          });
+        }
+      });
+      buttonCollector.on('end', async (collected, reason) => {
+        if (reason == 'time') {
+          msg.edit({
+            content: `:x: The session invite to session \`${session.id}\` from <@${initiator.id}> has expired!`,
           });
         }
       });
     }
+    return session;
   }
 }

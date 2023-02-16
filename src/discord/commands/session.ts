@@ -1,15 +1,10 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
 import { ButtonStyle, CommandInteraction, ComponentType } from 'discord.js';
-import { SlashCommandPipe } from '@discord-nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LovenseService } from 'src/lovense/lovense.service';
-import { QRCodeResponse } from 'src/lib/interfaces/lovense';
-import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 import {
-  LOVENSE_ACCOUNT_ALREADY_LINKED,
   LOVENSE_ACCOUNT_NOT_LINKED,
-  LOVENSE_QR_CODE_GENERATION_ERROR,
   NEED_TO_REGISTER_PLEASUREPAL,
 } from 'src/lib/constants';
 
@@ -35,8 +30,10 @@ export class SessionCommand {
       await interaction.reply(LOVENSE_ACCOUNT_NOT_LINKED);
       return;
     }
+    const timeout = 300000;
     const msg = await interaction.reply({
       content: 'Configure your pleasurepal session',
+      ephemeral: true,
       components: [
         {
           type: ComponentType.ActionRow,
@@ -82,30 +79,30 @@ export class SessionCommand {
     });
     let users: string[] = [];
     const userSelector = msg.createMessageComponentCollector({
-      time: 60000,
       componentType: ComponentType.UserSelect,
+      time: timeout,
     });
     userSelector.on('collect', async (interaction) => {
       users = interaction.values;
-      interaction.update({});
+      interaction.deferUpdate();
     });
     let channel: string;
     const channelSelector = msg.createMessageComponentCollector({
-      time: 60000,
       componentType: ComponentType.ChannelSelect,
+      time: timeout,
     });
     channelSelector.on('collect', async (interaction) => {
       channel = interaction.values[0];
-      interaction.update({});
+      interaction.deferUpdate();
     });
     const buttonSelector = msg.createMessageComponentCollector({
-      time: 60000,
       componentType: ComponentType.Button,
+      time: timeout,
     });
     buttonSelector.on('collect', async (interaction) => {
       if (interaction.customId === 'startSession') {
         if (!users.length && !channel) {
-          interaction.reply({
+          interaction.followUp({
             content: 'You need to select at least one user or a channel',
             ephemeral: true,
           });
@@ -113,24 +110,37 @@ export class SessionCommand {
           if (channel) {
           }
           if (users.length) {
-            await this.lovenseSrv.sendSessionInvites(
+            const session = await this.lovenseSrv.sendSessionInvites(
               users,
               interaction.user.id,
               interaction,
             );
+            interaction.update({
+              content: `Session \`#${
+                session.id
+              }\` created!\n\nInvites sent to: ${users
+                .map((u) => `<@${u}>`)
+                .join(', ')}`,
+              components: [],
+            });
           }
-          interaction.update({});
         }
       }
       if (interaction.customId === 'cancelSession') {
-        interaction.reply({
-          content: 'Session creation cancelled',
-          ephemeral: true,
-        });
         interaction.update({
-          content: 'Session creation cancelled',
+          content: 'Session creation cancelled!',
+          components: [],
         });
         return;
+      }
+    });
+    //Handle timeout
+    buttonSelector.on('end', async (i, reason) => {
+      if (reason === 'time') {
+        interaction.editReply({
+          content: ':x: Session creation timed out!',
+          components: [],
+        });
       }
     });
   }

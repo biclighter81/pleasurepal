@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { Public } from 'nest-keycloak-connect';
 import { LovenseCredentials } from './dto/lovense-credentials.dto';
 import { LovenseService } from './lovense.service';
@@ -17,5 +17,10 @@ export class LovenseController {
   @Public(true)
   async callbackGet() {
     return 'OK!';
+  }
+
+  @Post('qr/discord/:uid')
+  async sendLovenseQr(@Param('uid') uid: string) {
+    return this.lovenseSrv.sendLovenseQRCode(uid);
   }
 }

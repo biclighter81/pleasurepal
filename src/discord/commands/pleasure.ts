@@ -1,15 +1,11 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
-import { CommandInteraction, ComponentType } from 'discord.js';
+import { CommandInteraction } from 'discord.js';
 import { SlashCommandPipe } from '@discord-nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LovenseService } from 'src/lovense/lovense.service';
-import { QRCodeResponse } from 'src/lib/interfaces/lovense';
-import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 import {
-  LOVENSE_ACCOUNT_ALREADY_LINKED,
   LOVENSE_ACCOUNT_NOT_LINKED,
-  LOVENSE_QR_CODE_GENERATION_ERROR,
   NEED_TO_REGISTER_PLEASUREPAL,
 } from 'src/lib/constants';
 import {

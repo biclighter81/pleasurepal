@@ -1,8 +1,8 @@
 import { EmbedBuilder } from 'discord.js';
 
-export function buildLovenseQrCodeEmbed(link: string) {
+export function buildLovenseQrCodeEmbed(link: string, title?: string) {
   const embedBuilder = new EmbedBuilder();
-  embedBuilder.setTitle('Link your Lovense account');
+  embedBuilder.setTitle(title || 'Link your Lovense account');
   embedBuilder.setDescription(
     'Please link your Lovense account with the lovense Connect or Remote App, using this qr code:',
   );
