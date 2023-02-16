@@ -16,6 +16,7 @@ import {
   ComponentType,
   InteractionResponse,
   MessageCreateOptions,
+  User,
 } from 'discord.js';
 import { LovenseFunctionCommand } from './dto/lovense-command.dto';
 import { LovenseCredentials_DiscordSession } from './entities/credentials_discord_session.join-entity';
@@ -89,10 +90,10 @@ export class LovenseService {
     return credentials;
   }
 
-  async getCredentials(kcId: string) {
+  async getCredentials(kcId: string, withoutUnlinked?: boolean) {
     return this.lovenseCredRepo.findOne({
       relations: ['toys'],
-      where: { uid: kcId },
+      where: { uid: kcId, unlinked: withoutUnlinked ? false : undefined },
     });
   }
 
@@ -103,10 +104,7 @@ export class LovenseService {
       },
       { active: false },
     );
-    return this.lovenseCredRepo.update(
-      { uid: kcId },
-      { unlinked: true, toys: [] },
-    );
+    return this.lovenseCredRepo.update({ uid: kcId }, { unlinked: true });
   }
 
   async getLinkQrCode(kcId: string, username: string): Promise<QRCodeResponse> {
@@ -192,6 +190,7 @@ export class LovenseService {
         active: true,
         credentials: {
           lovenseCredentialsUid: kcId,
+          active: true,
         },
       },
       relations: ['credentials'],
@@ -208,6 +207,7 @@ export class LovenseService {
         credentials: {
           lovenseDiscordSessionId: sessionId,
           inviteAccepted: true,
+          active: true,
         },
       },
       relations: ['credentials'],
@@ -252,12 +252,47 @@ export class LovenseService {
           return {
             lovenseCredentialsUid: c.uid,
             inviteAccepted: c.uid == initiator.id,
+            hasControl: c.uid == initiator.id,
           };
         }),
       },
       {},
     );
     return session;
+  }
+
+  async leaveSession(uid: string, session: LovenseDiscordSession) {
+    //pass rights to next user
+    const nextUser = session.credentials.find((c) => c.inviteAccepted);
+    if (nextUser && nextUser.lovenseCredentialsUid != uid) {
+      console.log(nextUser);
+      await this.lovenseCredDiscordSessionRepo.update(
+        {
+          lovenseCredentialsUid: nextUser.lovenseCredentialsUid,
+          lovenseDiscordSessionId: session.id,
+        },
+        {
+          hasControl: true,
+        },
+      );
+      const discordUid = await getDiscordUidByKCId(
+        nextUser.lovenseCredentialsUid,
+      );
+      await this.sendDiscordMessageToUser(
+        discordUid,
+        `The session intiator has left the current session \`#${session.id}}\`. You now have control of the toys.`,
+      );
+    }
+    await this.lovenseCredDiscordSessionRepo.update(
+      {
+        lovenseCredentialsUid: uid,
+        lovenseDiscordSessionId: session.id,
+      },
+      {
+        active: false,
+        hasControl: false,
+      },
+    );
   }
 
   async sendSessionInvites(
@@ -277,6 +312,8 @@ export class LovenseService {
     );
     // Create session
     const session = await this.createSession(uids, initiatorUid);
+
+    let incompletedAccounts: User[] = [];
     // Send invites
     for (const user of invitedUsers) {
       const kcUser = await getKCUserByDiscordId(user.id);
@@ -285,6 +322,7 @@ export class LovenseService {
         await user.send(
           `You have been invited to a pleasurepal session by \`@${initiator.username}\`, but you have not linked your discord account with your pleasurepal account or worse: You maybe don't even have a pleasurepal account! Please register under https://pleasurepal.de/ and link your discord account under https://pleasurepal.de/profile.`,
         );
+        incompletedAccounts.push(user);
         continue;
       }
       const creds = await this.lovenseCredRepo.findOne({
@@ -294,8 +332,10 @@ export class LovenseService {
         await user.send(
           `You have been invited to a pleasurepal session by \`@${initiator.username}\`, but you have not linked your lovense account with your pleasurepal account! Please link your lovense account under https://pleasurepal.de/profile.`,
         );
+        incompletedAccounts.push(user);
         continue;
       }
+
       const msg = await user.send({
         content: `\`@${
           initiator.username
@@ -303,7 +343,8 @@ export class LovenseService {
           session.id
         }\`!\nThese are the invited users: \`@${invitedUsers
           .map((u) => u.username)
-          .join('`, `@')}\``,
+          .join('`, `@')}\`
+          `,
         components: [
           {
             type: ComponentType.ActionRow,
@@ -364,6 +405,16 @@ export class LovenseService {
         }
       });
     }
-    return session;
+
+    //make incompletedAccounts distinct by there id
+    const distinctUids = [...new Set(incompletedAccounts.map((u) => u.id))];
+    incompletedAccounts = distinctUids.map((uid) => {
+      return incompletedAccounts.find((u) => u.id == uid);
+    });
+
+    return {
+      session,
+      incompletedAccounts,
+    };
   }
 }

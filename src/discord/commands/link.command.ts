@@ -30,9 +30,9 @@ export class LinkCommand {
       await interaction.reply(NEED_TO_REGISTER_PLEASUREPAL);
       return;
     }
-    const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
+    const credentials = await this.lovenseSrv.getCredentials(kcUser.id, true);
 
-    async function sendQr(lovenseSrv: LovenseService) {
+    async function sendQr(lovenseSrv: LovenseService, replied: boolean) {
       let qr: QRCodeResponse;
       try {
         qr = await lovenseSrv.getLinkQrCode(kcUser.id, kcUser.username);
@@ -42,9 +42,17 @@ export class LinkCommand {
         return;
       }
       const embedBuilder = buildLovenseQrCodeEmbed(qr.message);
-      await interaction.editReply({
-        embeds: [embedBuilder.toJSON()],
-      });
+      if (replied) {
+        await interaction.editReply({
+          embeds: [embedBuilder.toJSON()],
+          components: [],
+        });
+      } else {
+        await interaction.reply({
+          embeds: [embedBuilder.toJSON()],
+          components: [],
+        });
+      }
     }
 
     if (credentials) {
@@ -86,17 +94,18 @@ export class LinkCommand {
       const actionCollector = msg.createMessageComponentCollector({
         componentType: ComponentType.Button,
         filter: (i) => i.customId === 'link' || i.customId === 'unlink',
-        time: 300000,
+        time: 60000,
       });
       const cancelCollector = msg.createMessageComponentCollector({
         componentType: ComponentType.Button,
         filter: (i) => i.customId === 'cancel',
-        time: 300000,
+        time: 60000,
       });
       actionCollector.on('collect', async (i) => {
         i.deferUpdate();
         if (i.customId === 'link') {
-          return await sendQr(this.lovenseSrv);
+          await sendQr(this.lovenseSrv, true);
+          return actionCollector.stop();
         } else if (i.customId === 'unlink') {
           await this.lovenseSrv.unlinkLovense(kcUser.id);
           await interaction.editReply({
@@ -104,6 +113,7 @@ export class LinkCommand {
             components: [],
             embeds: [],
           });
+          actionCollector.stop();
         }
       });
       cancelCollector.on('collect', async (i) => {
@@ -112,10 +122,20 @@ export class LinkCommand {
           components: [],
           embeds: [],
         });
+        cancelCollector.stop();
+      });
+      cancelCollector.on('end', (i, reason) => {
+        if (reason === 'time') {
+          interaction.editReply({
+            content: ':x: Relinking timed out!',
+            components: [],
+            embeds: [],
+          });
+        }
       });
       return;
     } else {
-      return sendQr(this.lovenseSrv);
+      return sendQr(this.lovenseSrv, false);
     }
   }
 }

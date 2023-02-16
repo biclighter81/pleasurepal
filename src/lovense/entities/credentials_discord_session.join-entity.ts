@@ -32,6 +32,9 @@ export class LovenseCredentials_DiscordSession {
   @Column({ default: true })
   active: boolean;
 
+  @Column({ default: false })
+  hasControl: boolean;
+
   @Column({ nullable: true })
   lastActive: Date;
 

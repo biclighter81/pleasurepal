@@ -110,19 +110,25 @@ export class SessionCommand {
           if (channel) {
           }
           if (users.length) {
-            const session = await this.lovenseSrv.sendSessionInvites(
+            const sessionResult = await this.lovenseSrv.sendSessionInvites(
               users,
               interaction.user.id,
               interaction,
             );
             interaction.update({
               content: `Session \`#${
-                session.id
+                sessionResult.session.id
               }\` created!\n\nInvites sent to: ${users
                 .map((u) => `<@${u}>`)
-                .join(', ')}`,
+                .join(', ')}
+              \n
+              These invited users didn't finish there pleasurepal account setup yet and may reply later: ${sessionResult.incompletedAccounts
+                .map((u) => `<@${u.id}>`)
+                .join(', ')}
+                `,
               components: [],
             });
+            buttonSelector.stop();
           }
         }
       }
@@ -131,6 +137,7 @@ export class SessionCommand {
           content: 'Session creation cancelled!',
           components: [],
         });
+        buttonSelector.stop();
         return;
       }
     });
