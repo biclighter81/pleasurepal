@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { LovenseCredentials_DiscordSession } from './credentials_discord_session.join-entity';
+import { LovenseActionQueue } from './lovense-action-queue.entity';
 import { LovenseCredentials } from './lovense-credentials.entity';
 
 @Entity()
@@ -36,4 +37,7 @@ export class LovenseDiscordSession {
     { cascade: true },
   )
   credentials: LovenseCredentials_DiscordSession[];
+
+  @OneToMany(() => LovenseActionQueue, (action) => action.lovenseDiscordSession)
+  actionQueue: LovenseActionQueue[];
 }

@@ -1,5 +1,4 @@
 import { Choice, Param, ParamType } from '@discord-nestjs/core';
-import { ApplicationCommandOptionType } from 'discord.js';
 
 export enum PleasureActionOptions {
   vibrate,

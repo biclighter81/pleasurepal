@@ -1,12 +1,14 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
-import { ButtonStyle, CommandInteraction, ComponentType } from 'discord.js';
+import { CommandInteraction, ComponentType } from 'discord.js';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LovenseService } from 'src/lovense/lovense.service';
 import {
   LOVENSE_ACCOUNT_NOT_LINKED,
   NEED_TO_REGISTER_PLEASUREPAL,
-} from 'src/lib/constants';
+} from 'src/lib/reply-messages';
+import { SESSION_CREATION_COMPONENTS } from 'src/lib/interaction-helper';
+import { LovenseSessionService } from 'src/lovense/lovense-session.service';
 
 @Command({
   name: 'session',
@@ -14,7 +16,10 @@ import {
 })
 @Injectable()
 export class SessionCommand {
-  constructor(private readonly lovenseSrv: LovenseService) {}
+  constructor(
+    private readonly lovenseSrv: LovenseService,
+    private readonly sessionSrv: LovenseSessionService,
+  ) {}
 
   @Handler()
   async onLink(
@@ -30,53 +35,16 @@ export class SessionCommand {
       await interaction.reply(LOVENSE_ACCOUNT_NOT_LINKED);
       return;
     }
+
+    // timeout in ms
     const timeout = 300000;
     const msg = await interaction.reply({
       content: 'Configure your pleasurepal session',
       ephemeral: true,
-      components: [
-        {
-          type: ComponentType.ActionRow,
-          components: [
-            {
-              type: ComponentType.UserSelect,
-              customId: 'users',
-              placeholder: 'Select users to invite to your session',
-              minValues: 0,
-              maxValues: 5,
-            },
-          ],
-        },
-        {
-          type: ComponentType.ActionRow,
-          components: [
-            {
-              type: ComponentType.ChannelSelect,
-              customId: 'channelSession',
-              placeholder:
-                'Select a channel if you want to start a channel session',
-            },
-          ],
-        },
-        {
-          type: ComponentType.ActionRow,
-          components: [
-            {
-              type: ComponentType.Button,
-              customId: 'startSession',
-              label: 'Start session',
-              style: ButtonStyle.Primary,
-            },
-            {
-              type: ComponentType.Button,
-              customId: 'cancelSession',
-              label: 'Cancel',
-              style: ButtonStyle.Danger,
-            },
-          ],
-        },
-      ],
+      components: SESSION_CREATION_COMPONENTS,
     });
+
+    // Collect user select interactions
     let users: string[] = [];
     const userSelector = msg.createMessageComponentCollector({
       componentType: ComponentType.UserSelect,
@@ -86,6 +54,8 @@ export class SessionCommand {
       users = interaction.values;
       interaction.deferUpdate();
     });
+
+    // Collect channel select interactions
     let channel: string;
     const channelSelector = msg.createMessageComponentCollector({
       componentType: ComponentType.ChannelSelect,
@@ -95,11 +65,14 @@ export class SessionCommand {
       channel = interaction.values[0];
       interaction.deferUpdate();
     });
+
+    // Collect button interactions
     const buttonSelector = msg.createMessageComponentCollector({
       componentType: ComponentType.Button,
       time: timeout,
     });
     buttonSelector.on('collect', async (interaction) => {
+      // Start session button
       if (interaction.customId === 'startSession') {
         if (!users.length && !channel) {
           interaction.followUp({
@@ -107,10 +80,12 @@ export class SessionCommand {
             ephemeral: true,
           });
         } else {
+          // Get all users from channel and send invites
           if (channel) {
           }
+          // Send invites to manually selected users
           if (users.length) {
-            const sessionResult = await this.lovenseSrv.sendSessionInvites(
+            const sessionResult = await this.sessionSrv.sendSessionInvites(
               users,
               interaction.user.id,
               interaction,
@@ -132,6 +107,7 @@ export class SessionCommand {
           }
         }
       }
+      // Cancel button
       if (interaction.customId === 'cancelSession') {
         interaction.update({
           content: 'Session creation cancelled!',
@@ -141,6 +117,7 @@ export class SessionCommand {
         return;
       }
     });
+
     //Handle timeout
     buttonSelector.on('end', async (i, reason) => {
       if (reason === 'time') {

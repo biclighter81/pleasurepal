@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { LovenseCredentials_DiscordSession } from './lovense/entities/credentials_discord_session.join-entity';
+import { LovenseActionQueue } from './lovense/entities/lovense-action-queue.entity';
 import { LovenseCredentials } from './lovense/entities/lovense-credentials.entity';
 import { LovenseDiscordSession } from './lovense/entities/lovense-discord-session.entity';
 import { LovenseToy } from './lovense/entities/lovense-toy.entity';
@@ -19,6 +20,7 @@ export const AppDataSource = new DataSource({
     LovenseToy,
     LovenseDiscordSession,
     LovenseCredentials_DiscordSession,
+    LovenseActionQueue,
   ],
   schema: process.env.DB_SCHEMA,
   synchronize: true,

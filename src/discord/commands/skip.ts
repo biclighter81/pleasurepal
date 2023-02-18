@@ -6,7 +6,8 @@ import { LovenseService } from 'src/lovense/lovense.service';
 import {
   LOVENSE_ACCOUNT_NOT_LINKED,
   NEED_TO_REGISTER_PLEASUREPAL,
-} from 'src/lib/constants';
+} from 'src/lib/reply-messages';
+import { LovenseSessionService } from 'src/lovense/lovense-session.service';
 
 @Command({
   name: 'skip',
@@ -14,7 +15,10 @@ import {
 })
 @Injectable()
 export class SkipCommand {
-  constructor(private readonly lovenseSrv: LovenseService) {}
+  constructor(
+    private readonly lovenseSrv: LovenseService,
+    private readonly sessionSrv: LovenseSessionService,
+  ) {}
 
   @Handler()
   async onSkip(
@@ -30,7 +34,7 @@ export class SkipCommand {
       await interaction.reply(LOVENSE_ACCOUNT_NOT_LINKED);
       return;
     }
-    const session = await this.lovenseSrv.getCurrentSession(kcUser.id);
+    const session = await this.sessionSrv.getCurrentSession(kcUser.id);
     if (!session) {
       await interaction.reply({
         content: 'You are currently not in a pleasurepal session!',

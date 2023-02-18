@@ -8,20 +8,10 @@ import axios from 'axios';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { getDiscordUidByKCId, getKCUserByDiscordId } from 'src/lib/keycloak';
 import { InjectDiscordClient } from '@discord-nestjs/core';
-import {
-  ButtonInteraction,
-  ButtonStyle,
-  CacheType,
-  Client,
-  ComponentType,
-  InteractionResponse,
-  MessageCreateOptions,
-  User,
-} from 'discord.js';
+import { Client } from 'discord.js';
 import { LovenseFunctionCommand } from './dto/lovense-command.dto';
 import { LovenseCredentials_DiscordSession } from './entities/credentials_discord_session.join-entity';
-import { LovenseDiscordSession } from './entities/lovense-discord-session.entity';
-import { LOVENSE_QR_CODE_GENERATION_ERROR } from 'src/lib/constants';
+import { LOVENSE_QR_CODE_GENERATION_ERROR } from 'src/lib/reply-messages';
 import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 
 @Injectable()
@@ -33,12 +23,10 @@ export class LovenseService {
     private readonly lovenseCredRepo: Repository<LovenseCredentials>,
     @InjectRepository(LovenseToy)
     private readonly lovenseToyRepo: Repository<LovenseToy>,
-    @InjectRepository(LovenseDiscordSession)
-    private readonly lovenseDiscordSessionRepo: Repository<LovenseDiscordSession>,
     @InjectRepository(LovenseCredentials_DiscordSession)
     private readonly lovenseCredDiscordSessionRepo: Repository<LovenseCredentials_DiscordSession>,
     @InjectDiscordClient()
-    private readonly discordClient: Client,
+    public readonly discordClient: Client,
   ) {}
 
   async callback(body: LovenseCredentialsDto) {
@@ -46,6 +34,7 @@ export class LovenseService {
       relations: ['toys'],
       where: { uid: body.uid },
     });
+    // ignore webhook on unlinked
     if (existingCreds?.unlinked) return;
     const toys = await this.lovenseToyRepo.save(
       Object.keys(body.toys).map((key) => ({
@@ -60,17 +49,7 @@ export class LovenseService {
       toys: toys,
     });
     // Send success message to user if this is the first time linking or if the toys changed
-    if (
-      !existingCreds ||
-      existingCreds.toys
-        .sort()
-        .map((t) => t.nickName || t.name)
-        .join() !==
-        toys
-          .sort()
-          .map((t) => t.nickName || t.name)
-          .join()
-    ) {
+    if (!existingCreds || existingCreds.toys.length !== toys.length) {
       const discordUid = await getDiscordUidByKCId(body.uid);
       if (!discordUid) return credentials;
       if (!credentials.toys.length) {
@@ -180,241 +159,5 @@ export class LovenseService {
     );
     console.log(res.data);
     return res.data;
-  }
-
-  async getCurrentSession(
-    kcId: string,
-  ): Promise<LovenseDiscordSession | undefined> {
-    const session = await this.lovenseDiscordSessionRepo.findOne({
-      where: {
-        active: true,
-        credentials: {
-          lovenseCredentialsUid: kcId,
-          active: true,
-        },
-      },
-      relations: ['credentials'],
-    });
-    return session;
-  }
-
-  async sendSessionCommand(sessionId: string, command: LovenseFunctionCommand) {
-    // Get session with all users which have accepted the invite
-    const session = await this.lovenseDiscordSessionRepo.findOne({
-      where: {
-        id: sessionId,
-        active: true,
-        credentials: {
-          lovenseDiscordSessionId: sessionId,
-          inviteAccepted: true,
-          active: true,
-        },
-      },
-      relations: ['credentials'],
-    });
-    if (!session) throw new Error('No session found');
-    const allPromises = session.credentials.map((p) =>
-      this.sendLovenseFunction({
-        kcId: p.lovenseCredentialsUid,
-        ...command,
-      }),
-    );
-    return await Promise.all(allPromises);
-  }
-
-  async createSession(uids: string[], initiatorUid: string) {
-    const initiator = await getKCUserByDiscordId(initiatorUid);
-    // Disable all previous sessions for this user
-    await this.lovenseDiscordSessionRepo.update(
-      {
-        initiatorId: initiator.id,
-      },
-      {
-        active: false,
-      },
-    );
-    let userCredentials: LovenseCredentials[] = [];
-    for (const uid of uids) {
-      const kcUser = await getKCUserByDiscordId(uid);
-      // Handle users that have not linked their discord accounts
-      if (!kcUser) continue;
-      const creds = await this.lovenseCredRepo.findOne({
-        where: { uid: kcUser.id },
-      });
-      // Handle users that have not linked their lovense accounts
-      if (!creds) continue;
-      userCredentials.push(creds);
-    }
-    const session = await this.lovenseDiscordSessionRepo.save(
-      {
-        initiatorId: initiator.id,
-        credentials: userCredentials.map((c) => {
-          return {
-            lovenseCredentialsUid: c.uid,
-            inviteAccepted: c.uid == initiator.id,
-            hasControl: c.uid == initiator.id,
-          };
-        }),
-      },
-      {},
-    );
-    return session;
-  }
-
-  async leaveSession(uid: string, session: LovenseDiscordSession) {
-    //pass rights to next user
-    const nextUser = session.credentials.find((c) => c.inviteAccepted);
-    if (nextUser && nextUser.lovenseCredentialsUid != uid) {
-      console.log(nextUser);
-      await this.lovenseCredDiscordSessionRepo.update(
-        {
-          lovenseCredentialsUid: nextUser.lovenseCredentialsUid,
-          lovenseDiscordSessionId: session.id,
-        },
-        {
-          hasControl: true,
-        },
-      );
-      const discordUid = await getDiscordUidByKCId(
-        nextUser.lovenseCredentialsUid,
-      );
-      await this.sendDiscordMessageToUser(
-        discordUid,
-        `The session intiator has left the current session \`#${session.id}}\`. You now have control of the toys.`,
-      );
-    }
-    await this.lovenseCredDiscordSessionRepo.update(
-      {
-        lovenseCredentialsUid: uid,
-        lovenseDiscordSessionId: session.id,
-      },
-      {
-        active: false,
-        hasControl: false,
-      },
-    );
-  }
-
-  async sendSessionInvites(
-    uids: string[],
-    initiatorUid: string,
-    initiatorInteraction: ButtonInteraction<CacheType>,
-  ) {
-    const initiator = await this.discordClient.users.fetch(initiatorUid);
-    // Fetch KC users from discord ids
-    const invitedUsers = await Promise.all(
-      uids
-        .filter((uid) => uid != initiator.id)
-        .map(async (uid) => {
-          const user = await this.discordClient.users.fetch(uid);
-          return user;
-        }),
-    );
-    // Create session
-    const session = await this.createSession(uids, initiatorUid);
-
-    let incompletedAccounts: User[] = [];
-    // Send invites
-    for (const user of invitedUsers) {
-      const kcUser = await getKCUserByDiscordId(user.id);
-      // Handle users that have not linked their discord accounts
-      if (!kcUser) {
-        await user.send(
-          `You have been invited to a pleasurepal session by \`@${initiator.username}\`, but you have not linked your discord account with your pleasurepal account or worse: You maybe don't even have a pleasurepal account! Please register under https://pleasurepal.de/ and link your discord account under https://pleasurepal.de/profile.`,
-        );
-        incompletedAccounts.push(user);
-        continue;
-      }
-      const creds = await this.lovenseCredRepo.findOne({
-        where: { uid: kcUser.id },
-      });
-      if (!creds) {
-        await user.send(
-          `You have been invited to a pleasurepal session by \`@${initiator.username}\`, but you have not linked your lovense account with your pleasurepal account! Please link your lovense account under https://pleasurepal.de/profile.`,
-        );
-        incompletedAccounts.push(user);
-        continue;
-      }
-
-      const msg = await user.send({
-        content: `\`@${
-          initiator.username
-        }\` has invited you to Lovense session \`#${
-          session.id
-        }\`!\nThese are the invited users: \`@${invitedUsers
-          .map((u) => u.username)
-          .join('`, `@')}\`
-          `,
-        components: [
-          {
-            type: ComponentType.ActionRow,
-            components: [
-              {
-                type: ComponentType.Button,
-                customId: 'joinSession',
-                label: 'Join Session',
-                style: ButtonStyle.Primary,
-              },
-              {
-                type: ComponentType.Button,
-                customId: 'declineSession',
-                label: 'Decline',
-                style: ButtonStyle.Danger,
-              },
-            ],
-          },
-        ],
-      });
-      const buttonCollector = msg.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: 30000,
-      });
-      buttonCollector.on('collect', async (i) => {
-        if (i.customId == 'joinSession') {
-          //User has accepted the session
-          //Update session to add user
-          await this.lovenseCredDiscordSessionRepo.save({
-            lovenseCredentialsUid: creds.uid,
-            lovenseDiscordSessionId: session.id,
-            inviteAccepted: true,
-            lastActive: new Date(),
-          });
-
-          initiatorInteraction.followUp({
-            content: `\`@${user.username}\` has joined the session!`,
-          });
-          i.reply({
-            content: `You have joined the session \`${session.id}\`!\nYou can leave the session by typing \`/leave\`.`,
-          });
-        }
-        if (i.customId == 'declineSession') {
-          //User has declined the session
-          initiatorInteraction.followUp({
-            content: `\`@${user.username}\` has declined the session!`,
-          });
-          i.reply({
-            content: `You have declined the session!`,
-          });
-        }
-      });
-      buttonCollector.on('end', async (collected, reason) => {
-        if (reason == 'time') {
-          msg.edit({
-            content: `:x: The session invite to session \`${session.id}\` from <@${initiator.id}> has expired!`,
-          });
-        }
-      });
-    }
-
-    //make incompletedAccounts distinct by there id
-    const distinctUids = [...new Set(incompletedAccounts.map((u) => u.id))];
-    incompletedAccounts = distinctUids.map((uid) => {
-      return incompletedAccounts.find((u) => u.id == uid);
-    });
-
-    return {
-      session,
-      incompletedAccounts,
-    };
   }
 }

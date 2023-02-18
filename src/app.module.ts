@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DiscordService } from './discord/discord.service';
 import { DiscordModule as DiscordJSModule } from '@discord-nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { SlashCommandsModule } from './discord/slash-commands.module';
@@ -19,7 +18,8 @@ import {
 import { UserController } from './user/user.controller';
 import { APP_GUARD } from '@nestjs/core';
 import { LovenseModule } from './lovense/lovense.module';
-import { DiscordModule } from './discord/discord.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -54,12 +54,14 @@ import { DiscordModule } from './discord/discord.module';
       clientId: process.env.KEYCLOAK_CLIENT_ID,
       secret: process.env.KEYCLOAK_CLIENT_SECRET,
     }),
+    ScheduleModule.forRoot(),
     SlashCommandsModule,
     UserModule,
     LovenseModule,
+    SchedulerModule,
   ],
   controllers: [AppController],
-  providers: [AppService, DiscordService],
+  providers: [AppService],
 })
 export class AppModule {
   constructor() {}

@@ -1,4 +1,24 @@
-import { EmbedBuilder } from 'discord.js';
+import {
+  BaseMessageOptions,
+  ButtonInteraction,
+  ButtonStyle,
+  CacheType,
+  ChannelSelectMenuInteraction,
+  Collection,
+  CommandInteraction,
+  ComponentType,
+  EmbedBuilder,
+  InteractionResponse,
+  StringSelectMenuInteraction,
+  UserSelectMenuInteraction,
+} from 'discord.js';
+type ComponentsType = BaseMessageOptions['components'];
+type InteractionTimeoutType =
+  | UserSelectMenuInteraction<CacheType>
+  | ChannelSelectMenuInteraction<CacheType>
+  | StringSelectMenuInteraction<CacheType>
+  | ButtonInteraction<CacheType>
+  | CommandInteraction;
 
 export function buildLovenseQrCodeEmbed(link: string, title?: string) {
   const embedBuilder = new EmbedBuilder();
@@ -12,3 +32,131 @@ export function buildLovenseQrCodeEmbed(link: string, title?: string) {
   });
   return embedBuilder;
 }
+
+export function interactionTimeout(
+  interaction: InteractionTimeoutType,
+  reason: string,
+  timeoutMsg: string,
+) {
+  if (reason === 'time') {
+    interaction.editReply({
+      content: `${timeoutMsg}`,
+      components: [],
+      embeds: [],
+    });
+  }
+}
+
+/* Interaction Components */
+export const ALREADY_LINKED_COMPONENTS: ComponentsType = [
+  {
+    type: ComponentType.ActionRow,
+    components: [
+      {
+        type: ComponentType.Button,
+        style: ButtonStyle.Primary,
+        label: 'Try re-linking',
+        customId: 'link',
+      },
+      {
+        type: ComponentType.Button,
+        style: ButtonStyle.Danger,
+        label: 'Unlink account',
+        customId: 'unlink',
+      },
+    ],
+  },
+  {
+    type: ComponentType.ActionRow,
+    components: [
+      {
+        type: ComponentType.Button,
+        style: ButtonStyle.Secondary,
+        label: 'Cancel',
+        customId: 'cancel',
+      },
+    ],
+  },
+];
+
+export const LEAVE_INTERACTION_CONFIRM_COMPONENTS: ComponentsType = [
+  {
+    type: ComponentType.ActionRow,
+    components: [
+      {
+        type: ComponentType.Button,
+        style: ButtonStyle.Danger,
+        label: 'Leave',
+        customId: 'leave',
+      },
+      {
+        type: ComponentType.Button,
+        style: ButtonStyle.Secondary,
+        label: 'Stay in session',
+        customId: 'cancel',
+      },
+    ],
+  },
+];
+
+export const SESSION_CREATION_COMPONENTS: ComponentsType = [
+  {
+    type: ComponentType.ActionRow,
+    components: [
+      {
+        type: ComponentType.UserSelect,
+        customId: 'users',
+        placeholder: 'Select users to invite to your session',
+        minValues: 0,
+        maxValues: 5,
+      },
+    ],
+  },
+  {
+    type: ComponentType.ActionRow,
+    components: [
+      {
+        type: ComponentType.ChannelSelect,
+        customId: 'channelSession',
+        placeholder: 'Select a channel if you want to start a channel session',
+      },
+    ],
+  },
+  {
+    type: ComponentType.ActionRow,
+    components: [
+      {
+        type: ComponentType.Button,
+        customId: 'startSession',
+        label: 'Start session',
+        style: ButtonStyle.Primary,
+      },
+      {
+        type: ComponentType.Button,
+        customId: 'cancelSession',
+        label: 'Cancel',
+        style: ButtonStyle.Danger,
+      },
+    ],
+  },
+];
+
+export const SESSION_INVIATION_COMPONENTS: ComponentsType = [
+  {
+    type: ComponentType.ActionRow,
+    components: [
+      {
+        type: ComponentType.Button,
+        customId: 'joinSession',
+        label: 'Join Session',
+        style: ButtonStyle.Primary,
+      },
+      {
+        type: ComponentType.Button,
+        customId: 'declineSession',
+        label: 'Decline',
+        style: ButtonStyle.Danger,
+      },
+    ],
+  },
+];
