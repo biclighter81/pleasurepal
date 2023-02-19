@@ -24,6 +24,7 @@ export const AppDataSource = new DataSource({
   ],
   schema: process.env.DB_SCHEMA,
   synchronize: true,
+  useUTC: true,
   logging: process.env.LOG_LEVELS
     ? (process.env.LOG_LEVELS.split(',') as any)
     : ['warn', 'error'],
