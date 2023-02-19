@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LovenseFunctionCommand } from 'src/lovense/dto/lovense-command.dto';
 import { LovenseActionQueue } from 'src/lovense/entities/lovense-action-queue.entity';
-import { LovenseDiscordSession } from 'src/lovense/entities/lovense-discord-session.entity';
+import { PleasureSession } from 'src/lovense/entities/pleasure-session.entity';
 import { LovenseService } from 'src/lovense/lovense.service';
 import { Repository } from 'typeorm';
 
@@ -14,8 +14,8 @@ export class SchedulerService {
   constructor(
     @InjectRepository(LovenseActionQueue)
     private readonly actionQueueRepo: Repository<LovenseActionQueue>,
-    @InjectRepository(LovenseDiscordSession)
-    private readonly lovenseDiscordSessionRepo: Repository<LovenseDiscordSession>,
+    @InjectRepository(PleasureSession)
+    private readonly pleasureSessionRepo: Repository<PleasureSession>,
     private readonly lovenseSrv: LovenseService,
   ) {}
 
@@ -41,7 +41,7 @@ export class SchedulerService {
           { startedAt: new Date() },
         );
         //send action to lovense for all users in session
-        const session = await this.lovenseDiscordSessionRepo.findOne({
+        const session = await this.pleasureSessionRepo.findOne({
           where: { id: action.sessionId },
           relations: ['credentials'],
         });
@@ -55,7 +55,7 @@ export class SchedulerService {
           return await Promise.all(allPromises);
         }
       }
-      const session = await this.lovenseDiscordSessionRepo.findOne({
+      const session = await this.pleasureSessionRepo.findOne({
         where: { id: action.sessionId },
       });
       if (session) {

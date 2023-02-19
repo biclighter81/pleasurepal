@@ -9,6 +9,8 @@ import {
 } from 'src/lib/reply-messages';
 import { SESSION_CREATION_COMPONENTS } from 'src/lib/interaction-helper';
 import { LovenseSessionService } from 'src/lovense/lovense-session.service';
+import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
+import { LinkCommand } from './link';
 
 @Command({
   name: 'session',
@@ -31,8 +33,13 @@ export class SessionCommand {
       return;
     }
     const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
-    if (!credentials) {
-      await interaction.reply(LOVENSE_ACCOUNT_NOT_LINKED);
+    if (
+      !credentials ||
+      !credentials.lastHeartbeat ||
+      credentials.lastHeartbeat.getTime() <
+        Date.now() - LOVENSE_HEARTBEAT_INTERVAL
+    ) {
+      await this.lovenseSrv.sendLinkQr(kcUser, interaction);
       return;
     }
 

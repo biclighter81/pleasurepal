@@ -10,8 +10,8 @@ import {
 } from 'src/lib/reply-messages';
 import {
   PleasureActionOptions,
-  PleasureCommandDto,
-} from '../parameters/pleasure.dto';
+  PleasureCommandParams,
+} from '../parameters/pleasure.param';
 import { capatializeFirstLetter } from 'src/lib/utils';
 import { LovenseSessionService } from 'src/lovense/lovense-session.service';
 
@@ -28,7 +28,7 @@ export class PleasureCommand {
 
   @Handler()
   async onLink(
-    @InteractionEvent(SlashCommandPipe) dto: PleasureCommandDto,
+    @InteractionEvent(SlashCommandPipe) params: PleasureCommandParams,
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<void> {
     const kcUser = await getKCUserByDiscordId(interaction.user.id);
@@ -49,11 +49,11 @@ export class PleasureCommand {
     const cmd = await this.sessionSrv.sendSessionCommand(
       session.id,
       {
-        action: capatializeFirstLetter(PleasureActionOptions[dto.action]),
-        intensity: dto.intensity,
-        loopPauseSec: dto.looppausesec,
-        loopRunningSec: dto.looprunningsec,
-        timeSec: dto.duration,
+        action: capatializeFirstLetter(PleasureActionOptions[params.action]),
+        intensity: params.intensity,
+        loopPauseSec: params.looppausesec,
+        loopRunningSec: params.looprunningsec,
+        timeSec: params.duration,
         stopPrevious: false,
       },
       credentials,

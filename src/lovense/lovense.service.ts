@@ -8,11 +8,12 @@ import axios from 'axios';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { getDiscordUidByKCId, getKCUserByDiscordId } from 'src/lib/keycloak';
 import { InjectDiscordClient } from '@discord-nestjs/core';
-import { Client } from 'discord.js';
+import { Client, CommandInteraction } from 'discord.js';
 import { LovenseFunctionCommand } from './dto/lovense-command.dto';
-import { LovenseCredentials_DiscordSession } from './entities/credentials_discord_session.join-entity';
 import { LOVENSE_QR_CODE_GENERATION_ERROR } from 'src/lib/reply-messages';
 import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
+import { LovenseCredentials_PleasureSession } from './entities/credentials_plesure_session.join-entity';
+import { KeycloakUser } from 'src/lib/interfaces/keycloak';
 
 @Injectable()
 export class LovenseService {
@@ -23,8 +24,8 @@ export class LovenseService {
     private readonly lovenseCredRepo: Repository<LovenseCredentials>,
     @InjectRepository(LovenseToy)
     private readonly lovenseToyRepo: Repository<LovenseToy>,
-    @InjectRepository(LovenseCredentials_DiscordSession)
-    private readonly lovenseCredDiscordSessionRepo: Repository<LovenseCredentials_DiscordSession>,
+    @InjectRepository(LovenseCredentials_PleasureSession)
+    private readonly lovenseCredPleasureSessionRepo: Repository<LovenseCredentials_PleasureSession>,
     @InjectDiscordClient()
     public readonly discordClient: Client,
   ) {}
@@ -47,6 +48,7 @@ export class LovenseService {
     const credentials = await this.lovenseCredRepo.save({
       ...body,
       toys: toys,
+      lastHeartbeat: new Date(),
     });
     // Send success message to user if this is the first time linking or if the toys changed
     if (!existingCreds || existingCreds.toys.length !== toys.length) {
@@ -77,7 +79,7 @@ export class LovenseService {
   }
 
   async unlinkLovense(kcId: string) {
-    await this.lovenseCredDiscordSessionRepo.update(
+    await this.lovenseCredPleasureSessionRepo.update(
       {
         lovenseCredentialsUid: kcId,
       },
@@ -102,6 +104,33 @@ export class LovenseService {
     } catch (e) {
       this.logger.error(e);
       throw e;
+    }
+  }
+
+  async sendLinkQr(
+    kcUser: KeycloakUser,
+    interaction: CommandInteraction,
+    hasReplied?: boolean,
+  ) {
+    let qr: QRCodeResponse;
+    try {
+      qr = await this.getLinkQrCode(kcUser.id, kcUser.username);
+    } catch (e) {
+      console.error(e);
+      await interaction.followUp(LOVENSE_QR_CODE_GENERATION_ERROR);
+      return;
+    }
+    const embedBuilder = buildLovenseQrCodeEmbed(qr.message);
+    if (hasReplied) {
+      await interaction.editReply({
+        embeds: [embedBuilder.toJSON()],
+        components: [],
+      });
+    } else {
+      await interaction.reply({
+        embeds: [embedBuilder.toJSON()],
+        components: [],
+      });
     }
   }
 

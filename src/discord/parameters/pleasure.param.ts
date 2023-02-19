@@ -9,7 +9,7 @@ export enum PleasureActionOptions {
   suction,
 }
 
-export class PleasureCommandDto {
+export class PleasureCommandParams {
   @Choice(PleasureActionOptions)
   @Param({ description: 'Action', type: ParamType.INTEGER, required: true })
   action: PleasureActionOptions;

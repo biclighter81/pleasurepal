@@ -1,10 +1,10 @@
 import { DiscordModule } from '@discord-nestjs/core';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LovenseCredentials_DiscordSession } from './entities/credentials_discord_session.join-entity';
+import { LovenseCredentials_PleasureSession } from './entities/credentials_plesure_session.join-entity';
 import { LovenseActionQueue } from './entities/lovense-action-queue.entity';
 import { LovenseCredentials } from './entities/lovense-credentials.entity';
-import { LovenseDiscordSession } from './entities/lovense-discord-session.entity';
+import { PleasureSession } from './entities/pleasure-session.entity';
 import { LovenseToy } from './entities/lovense-toy.entity';
 import { LovenseSessionService } from './lovense-session.service';
 import { LovenseController } from './lovense.controller';
@@ -15,8 +15,8 @@ import { LovenseService } from './lovense.service';
     TypeOrmModule.forFeature([
       LovenseCredentials,
       LovenseToy,
-      LovenseDiscordSession,
-      LovenseCredentials_DiscordSession,
+      PleasureSession,
+      LovenseCredentials_PleasureSession,
       LovenseActionQueue,
     ]),
     DiscordModule.forFeature(),

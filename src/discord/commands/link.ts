@@ -37,29 +37,6 @@ export class LinkCommand {
 
     const credentials = await this.lovenseSrv.getCredentials(kcUser.id, true);
 
-    async function sendQr(lovenseSrv: LovenseService, replied: boolean) {
-      let qr: QRCodeResponse;
-      try {
-        qr = await lovenseSrv.getLinkQrCode(kcUser.id, kcUser.username);
-      } catch (e) {
-        console.error(e);
-        await interaction.followUp(LOVENSE_QR_CODE_GENERATION_ERROR);
-        return;
-      }
-      const embedBuilder = buildLovenseQrCodeEmbed(qr.message);
-      if (replied) {
-        await interaction.editReply({
-          embeds: [embedBuilder.toJSON()],
-          components: [],
-        });
-      } else {
-        await interaction.reply({
-          embeds: [embedBuilder.toJSON()],
-          components: [],
-        });
-      }
-    }
-
     if (credentials) {
       const msg = await interaction.reply({
         content: LOVENSE_ACCOUNT_ALREADY_LINKED,
@@ -83,7 +60,7 @@ export class LinkCommand {
       actionCollector.on('collect', async (i) => {
         i.deferUpdate();
         if (i.customId === 'link') {
-          await sendQr(this.lovenseSrv, true);
+          await this.lovenseSrv.sendLinkQr(kcUser, interaction, true);
           return actionCollector.stop();
         } else if (i.customId === 'unlink') {
           await this.lovenseSrv.unlinkLovense(kcUser.id);
@@ -111,7 +88,7 @@ export class LinkCommand {
       );
       return;
     } else {
-      return sendQr(this.lovenseSrv, false);
+      return this.lovenseSrv.sendLinkQr(kcUser, interaction);
     }
   }
 }

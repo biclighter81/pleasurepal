@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
-import { LovenseDiscordSession } from './lovense-discord-session.entity';
+import { PleasureSession } from './pleasure-session.entity';
 
 @Entity()
 export class LovenseActionQueue {
@@ -15,7 +15,7 @@ export class LovenseActionQueue {
   @Column({ nullable: true })
   startedAt: Date;
 
-  @ManyToOne(() => LovenseDiscordSession, (session) => session.actionQueue)
+  @ManyToOne(() => PleasureSession, (session) => session.actionQueue)
   @JoinColumn({ name: 'sessionId' })
-  lovenseDiscordSession: LovenseDiscordSession;
+  session: PleasureSession;
 }

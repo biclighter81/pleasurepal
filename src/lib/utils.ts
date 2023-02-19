@@ -1,3 +1,5 @@
+export const LOVENSE_HEARTBEAT_INTERVAL = 10000;
+
 export function capatializeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }

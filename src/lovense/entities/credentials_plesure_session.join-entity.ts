@@ -8,10 +8,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { LovenseCredentials } from './lovense-credentials.entity';
-import { LovenseDiscordSession } from './lovense-discord-session.entity';
+import { PleasureSession } from './pleasure-session.entity';
 
-@Entity('lovense_credentials_lovense_discord_session')
-export class LovenseCredentials_DiscordSession {
+@Entity('lovense_credentials_pleasure_session')
+export class LovenseCredentials_PleasureSession {
   @PrimaryColumn()
   lovenseCredentialsUid: string;
 
@@ -20,11 +20,11 @@ export class LovenseCredentials_DiscordSession {
   lovenseCredentials: LovenseCredentials;
 
   @PrimaryColumn()
-  lovenseDiscordSessionId: string;
+  pleasureSessionId: string;
 
-  @ManyToOne(() => LovenseDiscordSession, (session) => session.credentials)
-  @JoinColumn({ name: 'lovenseDiscordSessionId' })
-  lovenseDiscordSession: LovenseDiscordSession;
+  @ManyToOne(() => PleasureSession, (session) => session.credentials)
+  @JoinColumn({ name: 'pleasureSessionId' })
+  pleasureSession: PleasureSession;
 
   @Column({ default: false })
   inviteAccepted: boolean;

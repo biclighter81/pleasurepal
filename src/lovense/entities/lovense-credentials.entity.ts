@@ -2,15 +2,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   JoinTable,
   ManyToMany,
   OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { LovenseCredentials_DiscordSession } from './credentials_discord_session.join-entity';
-import { LovenseDiscordSession } from './lovense-discord-session.entity';
+import { LovenseCredentials_PleasureSession } from './credentials_plesure_session.join-entity';
 import { LovenseToy } from './lovense-toy.entity';
 
 @Entity('lovense_credentials')
@@ -45,10 +43,13 @@ export class LovenseCredentials {
   toys: LovenseToy[];
 
   @OneToMany(
-    () => LovenseCredentials_DiscordSession,
+    () => LovenseCredentials_PleasureSession,
     (join) => join.lovenseCredentials,
   )
-  sessions: LovenseCredentials_DiscordSession[];
+  sessions: LovenseCredentials_PleasureSession[];
+
+  @Column({ nullable: true })
+  lastHeartbeat: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
