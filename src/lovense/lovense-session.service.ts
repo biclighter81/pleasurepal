@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ButtonInteraction, CacheType, ComponentType, User } from 'discord.js';
-import { SESSION_INVIATION_COMPONENTS } from 'src/lib/interaction-helper';
+import { ButtonInteraction, CacheType, User } from 'discord.js';
 import { getDiscordUidByKCId, getKCUserByDiscordId } from 'src/lib/keycloak';
 import { INVITED_NOT_LINKED, INVITED_NO_ACCOUNT } from 'src/lib/reply-messages';
+import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
 import { Repository } from 'typeorm';
 import { LovenseFunctionCommand } from './dto/lovense-command.dto';
 import { LovenseCredentials_PleasureSession } from './entities/credentials_plesure_session.join-entity';
@@ -42,6 +42,41 @@ export class LovenseSessionService {
     return session;
   }
 
+  async getSessionDiscordUsers(
+    sessionId: string,
+  ): Promise<(User & { kcId: string })[]> {
+    const session = await this.pleasureSessionRepo.findOne({
+      where: {
+        id: sessionId,
+      },
+      relations: ['credentials'],
+    });
+    const users = [];
+    for (const cred of session.credentials) {
+      const discordUid = await getDiscordUidByKCId(cred.lovenseCredentialsUid);
+      const user = await this.lovenseSrv.discordClient.users.fetch(discordUid);
+      if (user) {
+        users.push({
+          ...user,
+          kcId: cred.lovenseCredentialsUid,
+        });
+      }
+    }
+    return users;
+  }
+
+  async authorizeUser(sessionId: string, kcId: string) {
+    await this.lovenseCredPleasureSessionRepo.update(
+      {
+        pleasureSessionId: sessionId,
+        lovenseCredentialsUid: kcId,
+      },
+      {
+        hasControl: true,
+      },
+    );
+  }
+
   async createSession(uids: string[], initiatorUid: string) {
     const initiator = await getKCUserByDiscordId(initiatorUid);
     // Disable all previous sessions for this user
@@ -58,16 +93,22 @@ export class LovenseSessionService {
       const kcUser = await getKCUserByDiscordId(uid);
       // Handle users that have not linked their discord accounts
       if (!kcUser) continue;
-      const creds = await this.lovenseCredRepo.findOne({
+      let creds = await this.lovenseCredRepo.findOne({
         where: { uid: kcUser.id },
       });
       // Handle users that have not linked their lovense accounts
-      if (!creds) continue;
+      if (!creds) {
+        // send message to user
+        creds = await this.lovenseCredRepo.save({
+          uid: kcUser.id,
+        });
+      }
       userCredentials.push(creds);
     }
     const session = await this.pleasureSessionRepo.save(
       {
         initiatorId: initiator.id,
+        isDiscord: true,
         credentials: userCredentials.map((c) => {
           return {
             lovenseCredentialsUid: c.uid,
@@ -172,13 +213,18 @@ export class LovenseSessionService {
       const creds = await this.lovenseCredRepo.findOne({
         where: { uid: kcUser.id },
       });
-      if (!creds) {
+      if (
+        !creds ||
+        !creds.lastHeartbeat ||
+        creds.lastHeartbeat.getTime() < Date.now() - LOVENSE_HEARTBEAT_INTERVAL
+      ) {
         await user.send(INVITED_NOT_LINKED(initiator.username));
+        await this.lovenseSrv.sendLinkQr(kcUser, user);
         incompletedAccounts.push(user);
         continue;
       }
       // Send invite message
-      await this.sendInviteMessage({
+      await this.lovenseSrv.sendInviteMessage({
         user,
         initiator,
         session,
@@ -200,69 +246,18 @@ export class LovenseSessionService {
     };
   }
 
-  async sendInviteMessage(props: {
-    user: User;
-    initiator: User;
-    session: PleasureSession;
-    invitedUsers: User[];
-    creds: LovenseCredentials;
-    initiatorInteraction: ButtonInteraction<CacheType>;
-  }) {
-    const msg = await props.user.send({
-      content: `\`@${
-        props.initiator.username
-      }\` has invited you to Lovense session \`#${
-        props.session.id
-      }\`!\nThese are the invited users: \`@${props.invitedUsers
-        .map((u) => u.username)
-        .join('`, `@')}\``,
-      components: SESSION_INVIATION_COMPONENTS,
-    });
-    const buttonCollector = msg.createMessageComponentCollector({
-      componentType: ComponentType.Button,
-      time: 30000,
-    });
-    buttonCollector.on('collect', async (i) => {
-      if (i.customId == 'joinSession') {
-        //User has accepted the session
-        //Update session to add user
-        await this.lovenseCredPleasureSessionRepo.save({
-          lovenseCredentialsUid: props.creds.uid,
-          lovenseDiscordSessionId: props.session.id,
-          inviteAccepted: true,
-          lastActive: new Date(),
-        });
-
-        props.initiatorInteraction.followUp({
-          content: `\`@${props.user.username}\` has joined the session!`,
-        });
-        i.reply({
-          content: `You have joined the session \`${props.session.id}\`!\nYou can leave the session by typing \`/leave\`.`,
-        });
-      }
-      if (i.customId == 'declineSession') {
-        //User has declined the session
-        props.initiatorInteraction.followUp({
-          content: `\`@${props.user.username}\` has declined the session!`,
-        });
-        i.reply({
-          content: `You have declined the session!`,
-        });
-      }
-    });
-    buttonCollector.on('end', async (collected, reason) => {
-      if (reason == 'time') {
-        msg.edit({
-          content: `:x: The session invite to session \`${props.session.id}\` from <@${props.initiator.id}> has expired!`,
-        });
-      }
-    });
-  }
-
   async leaveSession(uid: string, session: PleasureSession) {
     //pass rights to next user
-    const nextUser = session.credentials.find((c) => c.inviteAccepted);
-    if (nextUser && nextUser.lovenseCredentialsUid != uid) {
+    const invites = await this.lovenseCredPleasureSessionRepo.find({
+      where: {
+        pleasureSessionId: session.id,
+        active: true,
+      },
+    });
+    const nextUser = invites.find(
+      (i) => i.inviteAccepted && i.lovenseCredentialsUid != uid,
+    );
+    if (nextUser) {
       //pass session rights to next user
       await this.lovenseCredPleasureSessionRepo.update(
         {

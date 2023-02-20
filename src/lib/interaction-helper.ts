@@ -4,11 +4,9 @@ import {
   ButtonStyle,
   CacheType,
   ChannelSelectMenuInteraction,
-  Collection,
   CommandInteraction,
   ComponentType,
   EmbedBuilder,
-  InteractionResponse,
   StringSelectMenuInteraction,
   UserSelectMenuInteraction,
 } from 'discord.js';
@@ -22,9 +20,9 @@ type InteractionTimeoutType =
 
 export function buildLovenseQrCodeEmbed(link: string, title?: string) {
   const embedBuilder = new EmbedBuilder();
-  embedBuilder.setTitle(title || 'Link your Lovense account');
+  embedBuilder.setTitle(title || 'Link your Lovense account or open the app!');
   embedBuilder.setDescription(
-    'Please link your Lovense account with the lovense Connect or Remote App, using this qr code:',
+    `Please link your Lovense account with the lovense Connect or Remote App. If you have already linked your account, please open the app! If you don't receive an automated invitation, please scan the QR Code again to relink your account!`,
   );
   embedBuilder.setImage(link);
   embedBuilder.setFooter({

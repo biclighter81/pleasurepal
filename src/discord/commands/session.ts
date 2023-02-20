@@ -24,7 +24,7 @@ export class SessionCommand {
   ) {}
 
   @Handler()
-  async onLink(
+  async onSession(
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<void> {
     const kcUser = await getKCUserByDiscordId(interaction.user.id);
@@ -59,7 +59,7 @@ export class SessionCommand {
     });
     userSelector.on('collect', async (interaction) => {
       users = interaction.values;
-      interaction.deferUpdate();
+      await interaction.deferUpdate();
     });
 
     // Collect channel select interactions
@@ -70,7 +70,7 @@ export class SessionCommand {
     });
     channelSelector.on('collect', async (interaction) => {
       channel = interaction.values[0];
-      interaction.deferUpdate();
+      await interaction.deferUpdate();
     });
 
     // Collect button interactions
@@ -92,20 +92,23 @@ export class SessionCommand {
           }
           // Send invites to manually selected users
           if (users.length) {
+            await interaction.update({
+              content: `Session is being created! Invites will be sent to: ${users
+                .map((u) => `<@${u}>`)
+                .join(', ')}`,
+              components: [],
+            });
+            //await interaction.deferReply({ ephemeral: true });
             const sessionResult = await this.sessionSrv.sendSessionInvites(
               users,
               interaction.user.id,
               interaction,
             );
-            interaction.update({
+            await interaction.editReply({
               content: `Session \`#${
                 sessionResult.session.id
               }\` created!\n\nInvites sent to: ${users
                 .map((u) => `<@${u}>`)
-                .join(', ')}
-              \n
-              These invited users didn't finish there pleasurepal account setup yet and may reply later: ${sessionResult.incompletedAccounts
-                .map((u) => `<@${u.id}>`)
                 .join(', ')}
                 `,
               components: [],

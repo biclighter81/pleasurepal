@@ -13,6 +13,7 @@ import { LinkCommand } from './commands/link';
 import { PleasureCommand } from './commands/pleasure';
 import { SessionCommand } from './commands/session';
 import { SkipCommand } from './commands/skip';
+import { AuthorizeCommand } from './commands/authorize';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SkipCommand } from './commands/skip';
     SkipCommand,
     LeaveCommand,
     LovenseSessionService,
+    AuthorizeCommand,
   ],
 })
 export class SlashCommandsModule {}

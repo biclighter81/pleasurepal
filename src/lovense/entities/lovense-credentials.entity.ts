@@ -15,25 +15,25 @@ import { LovenseToy } from './lovense-toy.entity';
 export class LovenseCredentials {
   @PrimaryColumn()
   uid: string;
-  @Column()
+  @Column({ nullable: true })
   appVersion: string;
-  @Column()
+  @Column({ nullable: true })
   wssPort: number;
-  @Column()
+  @Column({ nullable: true })
   httpPort: number;
-  @Column()
+  @Column({ nullable: true })
   wsPort: number;
-  @Column()
+  @Column({ nullable: true })
   appType: string;
-  @Column()
+  @Column({ nullable: true })
   domain: string;
-  @Column()
+  @Column({ nullable: true })
   utoken: string;
-  @Column()
+  @Column({ nullable: true })
   httpsPort: number;
-  @Column()
+  @Column({ nullable: true })
   version: string;
-  @Column()
+  @Column({ nullable: true })
   platform: string;
   @Column({ default: 'false' })
   unlinked: boolean;

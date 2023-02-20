@@ -12,7 +12,10 @@ import {
   PleasureActionOptions,
   PleasureCommandParams,
 } from '../parameters/pleasure.param';
-import { capatializeFirstLetter } from 'src/lib/utils';
+import {
+  capatializeFirstLetter,
+  LOVENSE_HEARTBEAT_INTERVAL,
+} from 'src/lib/utils';
 import { LovenseSessionService } from 'src/lovense/lovense-session.service';
 
 @Command({
@@ -37,13 +40,29 @@ export class PleasureCommand {
       return;
     }
     const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
-    if (!credentials) {
-      await interaction.reply(LOVENSE_ACCOUNT_NOT_LINKED);
+    if (
+      !credentials ||
+      !credentials.lastHeartbeat ||
+      credentials.lastHeartbeat.getTime() <
+        Date.now() - LOVENSE_HEARTBEAT_INTERVAL
+    ) {
+      await this.lovenseSrv.sendLinkQr(kcUser, interaction);
       return;
     }
     const session = await this.sessionSrv.getCurrentSession(kcUser.id);
     if (!session) {
       await interaction.reply('You are not in a session.');
+      return;
+    }
+    //check for session rights
+    if (
+      !session.credentials.find(
+        (c) => c.lovenseCredentialsUid === credentials.uid,
+      )?.hasControl
+    ) {
+      await interaction.reply(
+        ':lock: You do not have control over the current session!',
+      );
       return;
     }
     const cmd = await this.sessionSrv.sendSessionCommand(

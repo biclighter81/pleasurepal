@@ -3,15 +3,13 @@ import { CommandInteraction } from 'discord.js';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LovenseService } from 'src/lovense/lovense.service';
-import {
-  LOVENSE_ACCOUNT_NOT_LINKED,
-  NEED_TO_REGISTER_PLEASUREPAL,
-} from 'src/lib/reply-messages';
+import { NEED_TO_REGISTER_PLEASUREPAL } from 'src/lib/reply-messages';
 import {
   interactionTimeout,
   LEAVE_INTERACTION_CONFIRM_COMPONENTS,
 } from 'src/lib/interaction-helper';
 import { LovenseSessionService } from 'src/lovense/lovense-session.service';
+import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
 
 @Command({
   name: 'leave',
@@ -31,12 +29,6 @@ export class LeaveCommand {
     const kcUser = await getKCUserByDiscordId(interaction.user.id);
     if (!kcUser) {
       await interaction.reply(NEED_TO_REGISTER_PLEASUREPAL);
-      return;
-    }
-
-    const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
-    if (!credentials) {
-      await interaction.reply(LOVENSE_ACCOUNT_NOT_LINKED);
       return;
     }
 

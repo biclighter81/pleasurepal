@@ -8,6 +8,7 @@ import {
   NEED_TO_REGISTER_PLEASUREPAL,
 } from 'src/lib/reply-messages';
 import { LovenseSessionService } from 'src/lovense/lovense-session.service';
+import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
 
 @Command({
   name: 'skip',
@@ -30,8 +31,13 @@ export class SkipCommand {
       return;
     }
     const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
-    if (!credentials) {
-      await interaction.reply(LOVENSE_ACCOUNT_NOT_LINKED);
+    if (
+      !credentials ||
+      !credentials.lastHeartbeat ||
+      credentials.lastHeartbeat.getTime() <
+        Date.now() - LOVENSE_HEARTBEAT_INTERVAL
+    ) {
+      await this.lovenseSrv.sendLinkQr(kcUser, interaction);
       return;
     }
     const session = await this.sessionSrv.getCurrentSession(kcUser.id);
@@ -45,7 +51,7 @@ export class SkipCommand {
     await this.lovenseSrv.sendLovenseFunction({
       kcId: kcUser.id,
       action: 'Vibrate',
-      intensity: 0,
+      intensity: 1,
       loopPauseSec: 0,
       loopRunningSec: 0,
       timeSec: 1,
