@@ -25,12 +25,6 @@ export class LovenseController {
     return this.lovenseSrv.callback(body);
   }
 
-  @Get('callback')
-  @Public(true)
-  async callbackGet() {
-    return 'OK!';
-  }
-
   @Post('qr/discord/:uid')
   async sendLovenseQr(@Param('uid') uid: string) {
     const kcUser = await getKCUserByDiscordId(uid);

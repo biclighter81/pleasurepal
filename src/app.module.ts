@@ -20,6 +20,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { LovenseModule } from './lovense/lovense.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { MembershipModule } from './membership/membership.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     UserModule,
     LovenseModule,
     SchedulerModule,
+    MembershipModule,
   ],
   controllers: [AppController],
   providers: [AppService],
