@@ -1,8 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ButtonInteraction, CacheType, User } from 'discord.js';
+import {
+  ButtonInteraction,
+  CacheType,
+  CommandInteraction,
+  User,
+} from 'discord.js';
+import { DiscordService } from 'src/discord/discord.service';
+import { KeycloakUser } from 'src/lib/interfaces/keycloak';
 import { getDiscordUidByKCId, getKCUserByDiscordId } from 'src/lib/keycloak';
-import { INVITED_NOT_LINKED, INVITED_NO_ACCOUNT } from 'src/lib/reply-messages';
+import {
+  INVITED_NOT_LINKED,
+  INVITED_NO_ACCOUNT,
+  NEED_TO_REGISTER_PLEASUREPAL,
+} from 'src/lib/reply-messages';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
 import { Repository } from 'typeorm';
 import { LovenseFunctionCommand } from './dto/lovense-command.dto';
@@ -10,6 +21,7 @@ import { LovenseCredentials_PleasureSession } from './entities/credentials_plesu
 import { LovenseActionQueue } from './entities/lovense-action-queue.entity';
 import { LovenseCredentials } from './entities/lovense-credentials.entity';
 import { PleasureSession } from './entities/pleasure-session.entity';
+import { LovenseControlSservice } from './lovense-control.service';
 import { LovenseService } from './lovense.service';
 
 @Injectable()
@@ -26,6 +38,8 @@ export class LovenseSessionService {
     @InjectRepository(LovenseCredentials_PleasureSession)
     private readonly lovenseCredPleasureSessionRepo: Repository<LovenseCredentials_PleasureSession>,
     private readonly lovenseSrv: LovenseService,
+    private readonly lovenseControlSrv: LovenseControlSservice,
+    private readonly discordSrv: DiscordService,
   ) {}
 
   async getCurrentSession(kcId: string): Promise<PleasureSession | undefined> {
@@ -54,7 +68,7 @@ export class LovenseSessionService {
     const users = [];
     for (const cred of session.credentials) {
       const discordUid = await getDiscordUidByKCId(cred.lovenseCredentialsUid);
-      const user = await this.lovenseSrv.discordClient.users.fetch(discordUid);
+      const user = await this.discordSrv.getUser(discordUid);
       if (user) {
         users.push({
           ...user,
@@ -75,6 +89,60 @@ export class LovenseSessionService {
         hasControl: true,
       },
     );
+  }
+
+  async validateDiscordSessionReq(interaction: CommandInteraction): Promise<
+    | {
+        kcUser: KeycloakUser;
+        credentials: LovenseCredentials;
+        session: PleasureSession;
+      }
+    | undefined
+  > {
+    const kcUser = await getKCUserByDiscordId(interaction.user.id);
+    if (!kcUser) {
+      await interaction.reply(NEED_TO_REGISTER_PLEASUREPAL);
+      return undefined;
+    }
+    const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
+    if (
+      !credentials ||
+      !credentials.lastHeartbeat ||
+      credentials.lastHeartbeat.getTime() <
+        Date.now() - LOVENSE_HEARTBEAT_INTERVAL
+    ) {
+      const qr = await this.lovenseSrv.getLinkQrCode(
+        kcUser.id,
+        kcUser.username,
+      );
+      await this.discordSrv.pollLinkStatus(interaction, qr, credentials);
+      return undefined;
+    }
+    const session = await this.getCurrentSession(kcUser.id);
+    if (!session) {
+      await interaction.reply({
+        content:
+          ':x: You are currently not in a pleasurepal session! Create one with `/session`',
+        ephemeral: true,
+      });
+      return undefined;
+    }
+    return {
+      kcUser,
+      credentials,
+      session,
+    };
+  }
+
+  async getCommandQueue(sessionId: string): Promise<LovenseActionQueue[]> {
+    return await this.actionQueueRepo.find({
+      where: {
+        sessionId,
+      },
+      order: {
+        createdAt: 'ASC',
+      },
+    });
   }
 
   async createSession(uids: string[], initiatorUid: string) {
@@ -170,7 +238,7 @@ export class LovenseSessionService {
     // if first action in queue, send command to all users directly
     if (!queue.length) {
       const allPromises = session.credentials.map((p) =>
-        this.lovenseSrv.sendLovenseFunction({
+        this.lovenseControlSrv.sendLovenseFunction({
           kcId: p.lovenseCredentialsUid,
           ...command,
         }),
@@ -185,15 +253,13 @@ export class LovenseSessionService {
     initiatorUid: string,
     initiatorInteraction: ButtonInteraction<CacheType>,
   ) {
-    const initiator = await this.lovenseSrv.discordClient.users.fetch(
-      initiatorUid,
-    );
+    const initiator = await this.discordSrv.getUser(initiatorUid);
     // Fetch KC users from discord ids
     const invitedUsers = await Promise.all(
       uids
         .filter((uid) => uid != initiator.id)
         .map(async (uid) => {
-          const user = await this.lovenseSrv.discordClient.users.fetch(uid);
+          const user = await this.lovenseSrv.discordSrv.getUser(uid);
           return user;
         }),
     );
@@ -219,7 +285,8 @@ export class LovenseSessionService {
         creds.lastHeartbeat.getTime() < Date.now() - LOVENSE_HEARTBEAT_INTERVAL
       ) {
         await user.send(INVITED_NOT_LINKED(initiator.username));
-        await this.lovenseSrv.sendLinkQr(kcUser, user);
+        const qr = await this.lovenseSrv.getLinkQrCode(kcUser.id, kcUser.id);
+        await this.discordSrv.pollLinkStatus(user, qr, creds);
         incompletedAccounts.push(user);
         continue;
       }
@@ -271,7 +338,7 @@ export class LovenseSessionService {
       const discordUid = await getDiscordUidByKCId(
         nextUser.lovenseCredentialsUid,
       );
-      await this.lovenseSrv.sendDiscordMessageToUser(
+      await this.discordSrv.sendMessage(
         discordUid,
         `The session intiator has left the current session \`#${session.id}}\`. You now have control of the toys.`,
       );

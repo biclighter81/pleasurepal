@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Generated,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -22,6 +23,10 @@ export class PleasureSession {
 
   @Column({ default: false })
   isDiscord: boolean;
+
+  @Generated('uuid')
+  @Column()
+  inviteToken: string;
 
   @UpdateDateColumn()
   updatedAt: Date;

@@ -12,6 +12,7 @@ import {
   LOVENSE_ACCOUNT_UNLINKED,
   NEED_TO_REGISTER_PLEASUREPAL,
 } from 'src/lib/reply-messages';
+import { DiscordService } from '../discord.service';
 
 @Command({
   name: 'link',
@@ -20,7 +21,10 @@ import {
 })
 @Injectable()
 export class LinkCommand {
-  constructor(private readonly lovenseSrv: LovenseService) {}
+  constructor(
+    private readonly lovenseSrv: LovenseService,
+    private readonly discordSrv: DiscordService,
+  ) {}
 
   @Handler()
   async onLink(
@@ -57,7 +61,16 @@ export class LinkCommand {
       actionCollector.on('collect', async (i) => {
         i.deferUpdate();
         if (i.customId === 'link') {
-          await this.lovenseSrv.sendLinkQr(kcUser, interaction, true);
+          const qr = await this.lovenseSrv.getLinkQrCode(
+            kcUser.id,
+            kcUser.username,
+          );
+          await this.discordSrv.pollLinkStatus(
+            interaction,
+            qr,
+            credentials,
+            true,
+          );
           return actionCollector.stop();
         } else if (i.customId === 'unlink') {
           await this.lovenseSrv.unlinkLovense(kcUser.id);
@@ -85,7 +98,11 @@ export class LinkCommand {
       );
       return;
     } else {
-      return this.lovenseSrv.sendLinkQr(kcUser, interaction);
+      const qr = await this.lovenseSrv.getLinkQrCode(
+        kcUser.id,
+        kcUser.username,
+      );
+      return this.discordSrv.pollLinkStatus(interaction, qr, credentials);
     }
   }
 }

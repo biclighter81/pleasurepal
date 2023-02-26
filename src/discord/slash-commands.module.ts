@@ -14,6 +14,9 @@ import { PleasureCommand } from './commands/pleasure';
 import { SessionCommand } from './commands/session';
 import { SkipCommand } from './commands/skip';
 import { AuthorizeCommand } from './commands/authorize';
+import { DiscordService } from './discord.service';
+import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
+import { SessionInfoCommand } from './commands/session-info';
 
 @Module({
   imports: [
@@ -27,14 +30,17 @@ import { AuthorizeCommand } from './commands/authorize';
     DiscordJSModule.forFeature(),
   ],
   providers: [
-    LovenseService,
     LinkCommand,
     PleasureCommand,
     SessionCommand,
     SkipCommand,
     LeaveCommand,
-    LovenseSessionService,
     AuthorizeCommand,
+    SessionInfoCommand,
+    LovenseService,
+    LovenseSessionService,
+    LovenseControlSservice,
+    DiscordService,
   ],
 })
 export class SlashCommandsModule {}

@@ -2,21 +2,15 @@ import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
 import { CommandInteraction } from 'discord.js';
 import { SlashCommandPipe } from '@discord-nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LovenseService } from 'src/lovense/lovense.service';
-import {
-  LOVENSE_ACCOUNT_NOT_LINKED,
-  NEED_TO_REGISTER_PLEASUREPAL,
-} from 'src/lib/reply-messages';
+import {} from 'src/lib/reply-messages';
 import {
   PleasureActionOptions,
   PleasureCommandParams,
 } from '../parameters/pleasure.param';
-import {
-  capatializeFirstLetter,
-  LOVENSE_HEARTBEAT_INTERVAL,
-} from 'src/lib/utils';
+import { capatializeFirstLetter } from 'src/lib/utils';
 import { LovenseSessionService } from 'src/lovense/lovense-session.service';
+import { DiscordService } from '../discord.service';
 
 @Command({
   name: 'pleasure',
@@ -27,6 +21,7 @@ export class PleasureCommand {
   constructor(
     private readonly lovenseSrv: LovenseService,
     private readonly sessionSrv: LovenseSessionService,
+    private readonly discordSrv: DiscordService,
   ) {}
 
   @Handler()
@@ -34,39 +29,24 @@ export class PleasureCommand {
     @InteractionEvent(SlashCommandPipe) params: PleasureCommandParams,
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<void> {
-    const kcUser = await getKCUserByDiscordId(interaction.user.id);
-    if (!kcUser) {
-      await interaction.reply(NEED_TO_REGISTER_PLEASUREPAL);
-      return;
-    }
-    const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
-    if (
-      !credentials ||
-      !credentials.lastHeartbeat ||
-      credentials.lastHeartbeat.getTime() <
-        Date.now() - LOVENSE_HEARTBEAT_INTERVAL
-    ) {
-      await this.lovenseSrv.sendLinkQr(kcUser, interaction);
-      return;
-    }
-    const session = await this.sessionSrv.getCurrentSession(kcUser.id);
-    if (!session) {
-      await interaction.reply('You are not in a session.');
+    const info = await this.sessionSrv.validateDiscordSessionReq(interaction);
+    if (!info) {
       return;
     }
     //check for session rights
     if (
-      !session.credentials.find(
-        (c) => c.lovenseCredentialsUid === credentials.uid,
+      !info.session.credentials.find(
+        (c) => c.lovenseCredentialsUid === info.credentials.uid,
       )?.hasControl
     ) {
-      await interaction.reply(
-        ':lock: You do not have control over the current session!',
-      );
+      await interaction.reply({
+        content: ':lock: You do not have control over the current session!',
+        ephemeral: true,
+      });
       return;
     }
     const cmd = await this.sessionSrv.sendSessionCommand(
-      session.id,
+      info.session.id,
       {
         action: capatializeFirstLetter(PleasureActionOptions[params.action]),
         intensity: params.intensity,
@@ -75,8 +55,13 @@ export class PleasureCommand {
         timeSec: params.duration,
         stopPrevious: false,
       },
-      credentials,
+      info.credentials,
     );
-    await interaction.reply(`Command sent: ${JSON.stringify(cmd)}`);
+    await interaction.reply({
+      content: `You have sent the command \`${JSON.stringify(
+        cmd,
+      )}\` to the session!`,
+      ephemeral: true,
+    });
   }
 }

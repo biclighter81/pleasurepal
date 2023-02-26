@@ -1,33 +1,26 @@
-import { DiscordModule as DiscordJSModule } from '@discord-nestjs/core';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LovenseCredentials_PleasureSession } from 'src/lovense/entities/credentials_plesure_session.join-entity';
 import { LovenseActionQueue } from 'src/lovense/entities/lovense-action-queue.entity';
 import { LovenseCredentials } from 'src/lovense/entities/lovense-credentials.entity';
-import { PleasureSession } from 'src/lovense/entities/pleasure-session.entity';
 import { LovenseToy } from 'src/lovense/entities/lovense-toy.entity';
+import { PleasureSession } from 'src/lovense/entities/pleasure-session.entity';
+import { DiscordService } from './discord.service';
+import { DiscordModule as DiscordJSModule } from '@discord-nestjs/core';
 import { LovenseService } from 'src/lovense/lovense.service';
-import { SchedulerService } from './scheduler.service';
-import { DiscordService } from 'src/discord/discord.service';
-import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      LovenseActionQueue,
-      PleasureSession,
       LovenseCredentials,
       LovenseToy,
+      PleasureSession,
       LovenseCredentials_PleasureSession,
+      LovenseActionQueue,
     ]),
     DiscordJSModule.forFeature(),
   ],
-  controllers: [],
-  providers: [
-    SchedulerService,
-    LovenseService,
-    LovenseControlSservice,
-    DiscordService,
-  ],
+  providers: [DiscordService, LovenseService],
+  exports: [],
 })
-export class SchedulerModule {}
+export class DiscordModule {}

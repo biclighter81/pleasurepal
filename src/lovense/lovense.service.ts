@@ -6,27 +6,13 @@ import { LovenseCredentials } from './entities/lovense-credentials.entity';
 import { LovenseToy } from './entities/lovense-toy.entity';
 import axios from 'axios';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
-import { getDiscordUidByKCId, getKCUserByDiscordId } from 'src/lib/keycloak';
-import { InjectDiscordClient } from '@discord-nestjs/core';
-import {
-  ButtonInteraction,
-  CacheType,
-  Client,
-  CommandInteraction,
-  ComponentType,
-  Message,
-  User,
-} from 'discord.js';
-import { LovenseFunctionCommand } from './dto/lovense-command.dto';
-import { LOVENSE_QR_CODE_GENERATION_ERROR } from 'src/lib/reply-messages';
-import {
-  buildLovenseQrCodeEmbed,
-  SESSION_INVIATION_COMPONENTS,
-} from 'src/lib/interaction-helper';
+import { getDiscordUidByKCId } from 'src/lib/keycloak';
+import { ButtonInteraction, CacheType, ComponentType, User } from 'discord.js';
+import { SESSION_INVIATION_COMPONENTS } from 'src/lib/interaction-helper';
 import { LovenseCredentials_PleasureSession } from './entities/credentials_plesure_session.join-entity';
-import { KeycloakUser } from 'src/lib/interfaces/keycloak';
 import { PleasureSession } from './entities/pleasure-session.entity';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
+import { DiscordService } from 'src/discord/discord.service';
 
 @Injectable()
 export class LovenseService {
@@ -39,8 +25,7 @@ export class LovenseService {
     private readonly lovenseToyRepo: Repository<LovenseToy>,
     @InjectRepository(LovenseCredentials_PleasureSession)
     private readonly lovenseCredPleasureSessionRepo: Repository<LovenseCredentials_PleasureSession>,
-    @InjectDiscordClient()
-    public readonly discordClient: Client,
+    public readonly discordSrv: DiscordService,
   ) {}
 
   async callback(body: LovenseCredentialsDto) {
@@ -50,76 +35,38 @@ export class LovenseService {
     });
     // ignore webhook on unlinked
     if (existingCreds?.unlinked) return;
-    const toys = await this.lovenseToyRepo.save(
-      Object.keys(body.toys).map((key) => ({
-        id: key,
-        nickName: body.toys[key].nickName,
-        name: body.toys[key].name,
-        status: body.toys[key].status,
-      })),
-    );
+    const toys = await this.saveCallbackToys(body.toys);
     const credentials = await this.lovenseCredRepo.save({
       ...body,
       toys: toys,
       lastHeartbeat: new Date(),
     });
-    // Send success message to user if this is the first time linking or if the toys changed
-    if (!existingCreds || existingCreds.toys.length !== toys.length) {
-      const discordUid = await getDiscordUidByKCId(body.uid);
-      if (!discordUid) return credentials;
-      if (!credentials.toys.length) {
-        await this.sendDiscordMessageToUser(
-          discordUid,
-          `Your Lovense toys have been unlinked from your account!`,
-        );
-        return credentials;
-      }
-      await this.sendDiscordMessageToUser(
-        discordUid,
-        `Your Lovense toy(s): ${toys
-          .map((t) => t.nickName || t.name)
-          .join(',')} are now linked to your account!`,
-      );
+    // Send message to user if this is the first time linking or if the toys changed
+    if (!existingCreds) await this.sendLinkMessage(credentials.uid, 'new-user');
+    if (existingCreds && existingCreds.toys.length !== toys.length) {
+      await this.sendLinkMessage(credentials.uid, 'new-toys');
     }
-    // Send missed invites to user if this is the first time linking
+    // Send missed invites to user if this is the first time linking or if new heartbeat was sent
     if (
       existingCreds &&
       (!existingCreds?.lastHeartbeat ||
         existingCreds.lastHeartbeat.getTime() <
           Date.now() - LOVENSE_HEARTBEAT_INTERVAL)
     ) {
-      const sessionInvites = await this.lovenseCredPleasureSessionRepo.find({
-        relations: ['pleasureSession'],
-        where: {
-          lovenseCredentialsUid: body.uid,
-          pleasureSession: { active: true },
-          inviteAccepted: false,
-        },
-      });
-      for (const invite of sessionInvites) {
-        if (invite.pleasureSession.isDiscord) {
-          // Send discord invite
-          const discordUid = await getDiscordUidByKCId(body.uid);
-          if (!discordUid) continue;
-          const user = await this.discordClient.users.fetch(discordUid);
-          const initiatorDiscordUid = await getDiscordUidByKCId(
-            invite.pleasureSession.initiatorId,
-          );
-          const initiator = await this.discordClient.users.fetch(
-            initiatorDiscordUid,
-          );
-          if (!user) continue;
-          await this.sendInviteMessage({
-            user,
-            initiator,
-            creds: credentials,
-            invitedUsers: [],
-            session: invite.pleasureSession,
-          });
-        }
-      }
+      await this.sendMissedInvites(credentials);
     }
     return credentials;
+  }
+
+  async saveCallbackToys(toys: LovenseCredentialsDto['toys']) {
+    return this.lovenseToyRepo.save(
+      Object.keys(toys).map((key) => ({
+        id: key,
+        nickName: toys[key].nickName,
+        name: toys[key].name,
+        status: toys[key].status,
+      })),
+    );
   }
 
   async getCredentials(kcId: string, withoutUnlinked?: boolean) {
@@ -127,6 +74,64 @@ export class LovenseService {
       relations: ['toys'],
       where: { uid: kcId, unlinked: withoutUnlinked ? false : undefined },
     });
+  }
+
+  async sendLinkMessage(kcId: string, reason: 'new-user' | 'new-toys') {
+    const discordUid = await getDiscordUidByKCId(kcId);
+    //send update in pleasure webapp and discord if linked
+    switch (reason) {
+      case 'new-user':
+        if (discordUid) {
+          await this.discordSrv.sendMessage(
+            discordUid,
+            `Your Lovense toys have been linked to your account!`,
+          );
+        }
+        break;
+      case 'new-toys':
+        if (discordUid) {
+          await this.discordSrv.sendMessage(
+            discordUid,
+            `Your Lovense toys have been updated!`,
+          );
+        }
+        break;
+    }
+  }
+
+  async getSessionInvites(kcId: string) {
+    return this.lovenseCredPleasureSessionRepo.find({
+      relations: ['pleasureSession'],
+      where: {
+        lovenseCredentialsUid: kcId,
+        pleasureSession: { active: true },
+        inviteAccepted: false,
+      },
+    });
+  }
+
+  async sendMissedInvites(credentials: LovenseCredentials) {
+    const invites = await this.getSessionInvites(credentials.uid);
+    for (const invite of invites) {
+      if (invite.pleasureSession.isDiscord) {
+        // Send discord invite
+        const discordUid = await getDiscordUidByKCId(credentials.uid);
+        if (!discordUid) continue;
+        const user = await this.discordSrv.getUser(discordUid);
+        const initiatorDiscordUid = await getDiscordUidByKCId(
+          invite.pleasureSession.initiatorId,
+        );
+        const initiator = await this.discordSrv.getUser(initiatorDiscordUid);
+        if (!user) continue;
+        await this.sendInviteMessage({
+          user,
+          initiator,
+          creds: credentials,
+          invitedUsers: [],
+          session: invite.pleasureSession,
+        });
+      }
+    }
   }
 
   async unlinkLovense(kcId: string) {
@@ -158,127 +163,6 @@ export class LovenseService {
     }
   }
 
-  async sendLinkQr(
-    kcUser: KeycloakUser,
-    interaction: CommandInteraction | User,
-    hasReplied?: boolean,
-  ) {
-    let qr: QRCodeResponse;
-    try {
-      qr = await this.getLinkQrCode(kcUser.id, kcUser.username);
-    } catch (e) {
-      console.error(e);
-      if (interaction instanceof CommandInteraction) {
-        await interaction.followUp(LOVENSE_QR_CODE_GENERATION_ERROR);
-      } else {
-        await interaction.send(LOVENSE_QR_CODE_GENERATION_ERROR);
-      }
-      return;
-    }
-    const embedBuilder = buildLovenseQrCodeEmbed(qr.message);
-    let message: Message;
-    if (hasReplied && interaction instanceof CommandInteraction) {
-      await interaction.editReply({
-        embeds: [embedBuilder.toJSON()],
-        components: [],
-      });
-    } else if (interaction instanceof CommandInteraction) {
-      await interaction.reply({
-        ephemeral: true,
-        embeds: [embedBuilder.toJSON()],
-        components: [],
-      });
-    } else {
-      message = await interaction.send({
-        embeds: [embedBuilder.toJSON()],
-      });
-    }
-    //check if user has linked their toys every 3 seconds
-    let tries = 0;
-    const interval = setInterval(async () => {
-      tries++;
-      //stop after 5 minutes
-      if (tries > 100) {
-        clearInterval(interval);
-        return;
-      }
-      const creds = await this.lovenseCredRepo.findOne({
-        where: { uid: kcUser.id, unlinked: false },
-      });
-      if (creds.lastHeartbeat.getTime() > Date.now() - 10000) {
-        if (message) {
-          message.delete();
-        }
-        if (interaction instanceof CommandInteraction) {
-          await interaction.editReply({
-            content:
-              ':white_check_mark: We have noticed that you have opened the Lovense Remote app and successfully linked your account!',
-            embeds: [],
-            components: [],
-          });
-        }
-        clearInterval(interval);
-        return;
-      }
-    }, 3000);
-  }
-
-  //called by frontend after identifying with discord
-  async sendLovenseQRCode(discordUId: string) {
-    const user = await this.discordClient.users.fetch(discordUId);
-    const kcUser = await getKCUserByDiscordId(discordUId);
-    if (!kcUser) {
-      throw new Error('Discord user not found in Keycloak');
-    }
-    let qr: QRCodeResponse;
-    try {
-      qr = await this.getLinkQrCode(kcUser.id, kcUser.username);
-    } catch (e) {
-      await user.send(LOVENSE_QR_CODE_GENERATION_ERROR);
-      return;
-    }
-    const embedBuilder = buildLovenseQrCodeEmbed(
-      qr.message,
-      'Pleasurepal identification successful! Now link your Lovense toys to your account!',
-    );
-    await user.send({
-      embeds: [embedBuilder.toJSON()],
-    });
-  }
-
-  async sendDiscordMessageToUser(discordUid: string, message: string) {
-    const user = await this.discordClient.users.fetch(discordUid);
-    await user.send(message);
-  }
-
-  async getDiscordUser(discordUid: string) {
-    return await this.discordClient.users.fetch(discordUid);
-  }
-
-  async sendLovenseFunction(
-    command: {
-      kcId: string;
-    } & LovenseFunctionCommand,
-  ) {
-    const creds = await this.getCredentials(command.kcId);
-    if (!creds) throw new Error('No credentials found');
-    const res = await axios.post(
-      `https://api.lovense-api.com/api/lan/v2/command`,
-      {
-        command: 'Function',
-        token: process.env.LOVENSE_API_TOKEN,
-        uid: command.kcId,
-        action: command.action + ':' + (command.intensity || 5),
-        timeSec: command.timeSec,
-        loopRunningSec: command.loopRunningSec,
-        loopPauseSec: command.loopPauseSec,
-        stopPrevious: command.stopPrevious ? 1 : 0,
-      },
-    );
-    console.log(res.data);
-    return res.data;
-  }
-
   async sendInviteMessage(props: {
     user: User;
     initiator: User;
@@ -298,7 +182,7 @@ export class LovenseService {
           .filter((i) => i.lovenseCredentialsUid != props.session.initiatorId)
           .map(async (i) => {
             const uid = await getDiscordUidByKCId(i.lovenseCredentialsUid);
-            const user = await this.discordClient.users.fetch(uid);
+            const user = await this.discordSrv.getUser(uid);
             return user;
           }),
       );

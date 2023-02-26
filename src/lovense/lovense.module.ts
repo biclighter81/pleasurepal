@@ -9,6 +9,8 @@ import { LovenseToy } from './entities/lovense-toy.entity';
 import { LovenseSessionService } from './lovense-session.service';
 import { LovenseController } from './lovense.controller';
 import { LovenseService } from './lovense.service';
+import { DiscordService } from 'src/discord/discord.service';
+import { LovenseControlSservice } from './lovense-control.service';
 
 @Module({
   imports: [
@@ -22,7 +24,12 @@ import { LovenseService } from './lovense.service';
     DiscordModule.forFeature(),
   ],
   controllers: [LovenseController],
-  providers: [LovenseService, LovenseSessionService],
+  providers: [
+    LovenseService,
+    LovenseSessionService,
+    LovenseControlSservice,
+    DiscordService,
+  ],
   exports: [],
 })
 export class LovenseModule {}

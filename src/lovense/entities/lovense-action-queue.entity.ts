@@ -1,4 +1,12 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { PleasureSession } from './pleasure-session.entity';
 
 @Entity()
@@ -14,6 +22,12 @@ export class LovenseActionQueue {
 
   @Column({ nullable: true })
   startedAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @ManyToOne(() => PleasureSession, (session) => session.actionQueue)
   @JoinColumn({ name: 'sessionId' })

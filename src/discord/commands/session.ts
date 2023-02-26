@@ -1,4 +1,9 @@
-import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
+import {
+  Command,
+  Handler,
+  InteractionEvent,
+  UseGroup,
+} from '@discord-nestjs/core';
 import { CommandInteraction, ComponentType } from 'discord.js';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
@@ -11,6 +16,7 @@ import { SESSION_CREATION_COMPONENTS } from 'src/lib/interaction-helper';
 import { LovenseSessionService } from 'src/lovense/lovense-session.service';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
 import { LinkCommand } from './link';
+import { DiscordService } from '../discord.service';
 
 @Command({
   name: 'session',
@@ -21,6 +27,7 @@ export class SessionCommand {
   constructor(
     private readonly lovenseSrv: LovenseService,
     private readonly sessionSrv: LovenseSessionService,
+    private readonly discordSrv: DiscordService,
   ) {}
 
   @Handler()
@@ -39,7 +46,19 @@ export class SessionCommand {
       credentials.lastHeartbeat.getTime() <
         Date.now() - LOVENSE_HEARTBEAT_INTERVAL
     ) {
-      await this.lovenseSrv.sendLinkQr(kcUser, interaction);
+      const qr = await this.lovenseSrv.getLinkQrCode(
+        kcUser.id,
+        kcUser.username,
+      );
+      await this.discordSrv.pollLinkStatus(interaction, qr, credentials);
+      return;
+    }
+    const session = await this.sessionSrv.getCurrentSession(kcUser.id);
+    if (session) {
+      await interaction.reply({
+        content: `You are already in a session! To leave the session, use the \`/leave\` command.`,
+        ephemeral: true,
+      });
       return;
     }
 
@@ -93,9 +112,15 @@ export class SessionCommand {
           // Send invites to manually selected users
           if (users.length) {
             await interaction.update({
-              content: `Session is being created! Invites will be sent to: ${users
-                .map((u) => `<@${u}>`)
-                .join(', ')}`,
+              content: `Session is being created!\n\n:incoming_envelope: Invites will be sent to: ${
+                !(users.length == 1 && users.includes(interaction.user.id))
+                  ? `${users
+                      .filter((u) => u != interaction.user.id)
+                      .map((u) => `<@${u}>`)
+                      .join(', ')}
+                `
+                  : ''
+              }`,
               components: [],
             });
             //await interaction.deferReply({ ephemeral: true });
@@ -105,12 +130,15 @@ export class SessionCommand {
               interaction,
             );
             await interaction.editReply({
-              content: `Session \`#${
-                sessionResult.session.id
-              }\` created!\n\nInvites sent to: ${users
-                .map((u) => `<@${u}>`)
-                .join(', ')}
-                `,
+              content: `Session \`#${sessionResult.session.id}\` created!\n\n${
+                !(users.length == 1 && users.includes(interaction.user.id))
+                  ? `:incoming_envelope: Session invites have been sent to: ${users
+                      .filter((u) => u != interaction.user.id)
+                      .map((u) => `<@${u}>`)
+                      .join(', ')}
+                `
+                  : ''
+              }`,
               components: [],
             });
             buttonSelector.stop();
