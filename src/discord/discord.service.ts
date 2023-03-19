@@ -53,42 +53,44 @@ export class DiscordService {
     qr: QRCodeResponse,
     uid: string,
     hasReplied?: boolean,
-  ) {
+  ): Promise<boolean> {
+    //todo: custom message if invited f.e.
     //send qr code
     const message = await this.sendQr(qr, interaction, hasReplied);
     //check if user has linked their toys every 3 seconds
     let tries = 0;
-    const interval = setInterval(async () => {
-      tries++;
-      //stop after 5 minutes
-      if (tries > 300) {
-        clearInterval(interval);
-        return;
-      }
-      //poll for heartbeat
-      let credentials = await this.userRepo.findOne({
-        where: { uid: uid },
-      });
-      console.log(credentials);
-      if (
-        credentials?.lastHeartbeat?.getTime() >
-        Date.now() - LOVENSE_HEARTBEAT_INTERVAL
-      ) {
-        if (message) {
-          message.delete();
+    return new Promise<boolean>((resolve) => {
+      const interval = setInterval(async () => {
+        tries++;
+        //stop after 5 minutes
+        if (tries > 300) {
+          clearInterval(interval);
+          resolve(false);
         }
-        if (interaction instanceof CommandInteraction) {
-          await interaction.editReply({
-            content:
-              ':white_check_mark: We have noticed that you have opened the Lovense Remote app and successfully linked your account!',
-            embeds: [],
-            components: [],
-          });
+        //poll for heartbeat
+        let user = await this.userRepo.findOne({
+          where: { uid: uid },
+        });
+        if (
+          user?.lastHeartbeat?.getTime() >
+          Date.now() - LOVENSE_HEARTBEAT_INTERVAL
+        ) {
+          if (message) {
+            message.delete();
+          }
+          if (interaction instanceof CommandInteraction) {
+            await interaction.editReply({
+              content:
+                ':white_check_mark: We have noticed that you have opened the Lovense Remote app and successfully linked your account!',
+              embeds: [],
+              components: [],
+            });
+          }
+          clearInterval(interval);
+          resolve(true);
         }
-        clearInterval(interval);
-        return;
-      }
-    }, 1000);
+      }, 1000);
+    });
   }
 
   async sendQr(

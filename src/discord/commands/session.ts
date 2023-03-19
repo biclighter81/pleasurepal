@@ -39,12 +39,11 @@ export class SessionCommand {
       await interaction.reply(NEED_TO_REGISTER_PLEASUREPAL);
       return;
     }
-    const credentials = await this.lovenseSrv.getCredentials(kcUser.id);
+    const user = await this.lovenseSrv.getUser(kcUser.id);
     if (
-      !credentials ||
-      !credentials.lastHeartbeat ||
-      credentials.lastHeartbeat.getTime() <
-        Date.now() - LOVENSE_HEARTBEAT_INTERVAL
+      !user ||
+      !user.lastHeartbeat ||
+      user.lastHeartbeat.getTime() < Date.now() - LOVENSE_HEARTBEAT_INTERVAL
     ) {
       const qr = await this.lovenseSrv.getLinkQrCode(
         kcUser.id,

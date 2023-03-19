@@ -10,7 +10,7 @@ import { LovenseService } from './lovense.service';
 import { DiscordService } from 'src/discord/discord.service';
 import { LovenseControlSservice } from './lovense-control.service';
 import { User } from 'src/user/entities/user.entity';
-import { User_PleasureSession } from './entities/credentials_plesure_session.join-entity';
+import { User_PleasureSession } from './entities/user_plesure_session.join-entity';
 
 @Module({
   imports: [

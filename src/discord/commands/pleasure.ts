@@ -34,10 +34,7 @@ export class PleasureCommand {
       return;
     }
     //check for session rights
-    if (
-      !info.session.credentials.find((c) => c.uid === info.credentials.uid)
-        ?.hasControl
-    ) {
+    if (!info.session.user.find((c) => c.uid === info.user.uid)?.hasControl) {
       await interaction.reply({
         content: ':lock: You do not have control over the current session!',
         ephemeral: true,
@@ -54,7 +51,7 @@ export class PleasureCommand {
         timeSec: params.duration,
         stopPrevious: false,
       },
-      info.credentials,
+      info.user,
     );
     await interaction.reply({
       content: `You have sent the command \`${JSON.stringify(

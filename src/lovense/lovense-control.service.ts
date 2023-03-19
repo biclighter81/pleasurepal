@@ -18,8 +18,8 @@ export class LovenseControlSservice {
       kcId: string;
     } & LovenseFunctionCommand,
   ) {
-    const creds = await this.lovenseSrv.getCredentials(command.kcId);
-    if (!creds) throw new Error('No credentials found');
+    const user = await this.lovenseSrv.getUser(command.kcId);
+    if (!user) throw new Error('No user found');
     const res = await axios.post(
       `https://api.lovense-api.com/api/lan/v2/command`,
       {

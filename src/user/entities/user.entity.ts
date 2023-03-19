@@ -1,5 +1,5 @@
-import { User_PleasureSession } from 'src/lovense/entities/credentials_plesure_session.join-entity';
 import { LovenseToy } from 'src/lovense/entities/lovense-toy.entity';
+import { User_PleasureSession } from 'src/lovense/entities/user_plesure_session.join-entity';
 import {
   Column,
   CreateDateColumn,
@@ -42,7 +42,7 @@ export class User {
   @JoinTable()
   toys: LovenseToy[];
 
-  @ManyToMany(() => User, (credentials) => credentials.friends)
+  @ManyToMany(() => User, (user) => user.friends)
   @JoinTable()
   friends: User[];
 

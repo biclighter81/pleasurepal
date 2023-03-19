@@ -22,7 +22,7 @@ export class User_PleasureSession {
   @PrimaryColumn()
   pleasureSessionId: string;
 
-  @ManyToOne(() => PleasureSession, (session) => session.credentials)
+  @ManyToOne(() => PleasureSession, (session) => session.user)
   @JoinColumn({ name: 'pleasureSessionId' })
   pleasureSession: PleasureSession;
 

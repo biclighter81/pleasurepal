@@ -64,10 +64,10 @@ export class SchedulerService {
         //send action to lovense for all users in session
         const session = await this.pleasureSessionRepo.findOne({
           where: { id: action.sessionId },
-          relations: ['credentials'],
+          relations: ['user'],
         });
         if (session) {
-          const allPromises = session.credentials.map((p) =>
+          const allPromises = session.user.map((p) =>
             this.lovenseControlSrv.sendLovenseFunction({
               kcId: p.uid,
               ...(JSON.parse(action.action) as LovenseFunctionCommand),
@@ -109,10 +109,10 @@ export class SchedulerService {
       //send message to users in session
       const sessionUsers = await this.pleasureSessionRepo.findOne({
         where: { id: session.id },
-        relations: ['credentials'],
+        relations: ['user'],
       });
       if (sessionUsers) {
-        const allPromises = sessionUsers.credentials.map((p) => {
+        const allPromises = sessionUsers.user.map((p) => {
           return new Promise<void>(async (resolve, reject) => {
             const discordUid = await getDiscordUidByKCId(p.uid);
             this.discordSrv.sendMessage(

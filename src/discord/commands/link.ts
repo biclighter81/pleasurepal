@@ -36,9 +36,8 @@ export class LinkCommand {
       return;
     }
 
-    const credentials = await this.lovenseSrv.getCredentials(kcUser.id, true);
-
-    if (credentials) {
+    const user = await this.lovenseSrv.getUser(kcUser.id, true);
+    if (user) {
       const msg = await interaction.reply({
         content: LOVENSE_ACCOUNT_ALREADY_LINKED,
         ephemeral: true,
@@ -102,7 +101,8 @@ export class LinkCommand {
         kcUser.id,
         kcUser.username,
       );
-      return this.discordSrv.pollLinkStatus(interaction, qr, kcUser.id);
+      this.discordSrv.pollLinkStatus(interaction, qr, kcUser.id);
+      return;
     }
   }
 }

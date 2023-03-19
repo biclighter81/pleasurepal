@@ -7,8 +7,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User_PleasureSession } from './credentials_plesure_session.join-entity';
 import { LovenseActionQueue } from './lovense-action-queue.entity';
+import { User_PleasureSession } from './user_plesure_session.join-entity';
 
 @Entity()
 export class PleasureSession {
@@ -37,7 +37,7 @@ export class PleasureSession {
   @OneToMany(() => User_PleasureSession, (join) => join.pleasureSession, {
     cascade: true,
   })
-  credentials: User_PleasureSession[];
+  user: User_PleasureSession[];
 
   @OneToMany(() => LovenseActionQueue, (action) => action.session)
   actionQueue: LovenseActionQueue[];

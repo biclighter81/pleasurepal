@@ -7,7 +7,7 @@ import { DiscordService } from './discord.service';
 import { DiscordModule as DiscordJSModule } from '@discord-nestjs/core';
 import { LovenseService } from 'src/lovense/lovense.service';
 import { User } from 'src/user/entities/user.entity';
-import { User_PleasureSession } from 'src/lovense/entities/credentials_plesure_session.join-entity';
+import { User_PleasureSession } from 'src/lovense/entities/user_plesure_session.join-entity';
 
 @Module({
   imports: [

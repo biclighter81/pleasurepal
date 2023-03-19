@@ -9,7 +9,7 @@ import {
 import { Public } from 'nest-keycloak-connect';
 import { DiscordService } from 'src/discord/discord.service';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
-import { LovenseCredentials } from './dto/lovense-credentials.dto';
+import { LovenseUser } from './dto/lovense-user.dto';
 import { LovenseService } from './lovense.service';
 
 @Controller('lovense')
@@ -21,7 +21,7 @@ export class LovenseController {
 
   @Post('callback')
   @Public(true)
-  async callback(@Body() body: LovenseCredentials) {
+  async callback(@Body() body: LovenseUser) {
     return this.lovenseSrv.callback(body);
   }
 

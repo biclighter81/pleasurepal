@@ -9,7 +9,7 @@ import { SchedulerService } from './scheduler.service';
 import { DiscordService } from 'src/discord/discord.service';
 import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
 import { User } from 'src/user/entities/user.entity';
-import { User_PleasureSession } from 'src/lovense/entities/credentials_plesure_session.join-entity';
+import { User_PleasureSession } from 'src/lovense/entities/user_plesure_session.join-entity';
 
 @Module({
   imports: [
