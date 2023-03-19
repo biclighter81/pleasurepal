@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LovenseCredentials as LovenseCredentialsDto } from './dto/lovense-credentials.dto';
+import { LovenseUser } from './dto/lovense-user.dto';
 import { LovenseToy } from './entities/lovense-toy.entity';
 import axios from 'axios';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
@@ -17,7 +17,7 @@ import { PleasureSession } from './entities/pleasure-session.entity';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
 import { DiscordService } from 'src/discord/discord.service';
 import { User } from 'src/user/entities/user.entity';
-import { User_PleasureSession } from './entities/credentials_plesure_session.join-entity';
+import { User_PleasureSession } from './entities/user_plesure_session.join-entity';
 
 @Injectable()
 export class LovenseService {
@@ -33,37 +33,37 @@ export class LovenseService {
     public readonly discordSrv: DiscordService,
   ) {}
 
-  async callback(body: LovenseCredentialsDto) {
-    const existingCreds = await this.userRepo.findOne({
+  async callback(body: LovenseUser) {
+    const existingUser = await this.userRepo.findOne({
       relations: ['toys'],
       where: { uid: body.uid },
     });
     // ignore webhook on unlinked
-    if (existingCreds?.unlinked) return;
+    if (existingUser?.unlinked) return;
     const toys = await this.saveCallbackToys(body.toys);
-    const credentials = await this.userRepo.save({
+    const user = await this.userRepo.save({
       ...body,
       toys: toys,
       lastHeartbeat: new Date(),
     });
     // Send message to user if this is the first time linking or if the toys changed
-    if (!existingCreds) await this.sendLinkMessage(credentials.uid, 'new-user');
-    if (existingCreds && existingCreds.toys.length !== toys.length) {
-      await this.sendLinkMessage(credentials.uid, 'new-toys');
+    if (!existingUser) await this.sendLinkMessage(user.uid, 'new-user');
+    if (existingUser && existingUser.toys.length !== toys.length) {
+      await this.sendLinkMessage(user.uid, 'new-toys');
     }
     // Send missed invites to user if this is the first time linking or if new heartbeat was sent
     if (
-      existingCreds &&
-      (!existingCreds?.lastHeartbeat ||
-        existingCreds.lastHeartbeat.getTime() <
+      existingUser &&
+      (!existingUser?.lastHeartbeat ||
+        existingUser.lastHeartbeat.getTime() <
           Date.now() - LOVENSE_HEARTBEAT_INTERVAL)
     ) {
-      await this.sendMissedInvites(credentials);
+      await this.sendMissedInvites(user);
     }
-    return credentials;
+    return user;
   }
 
-  async saveCallbackToys(toys: LovenseCredentialsDto['toys']) {
+  async saveCallbackToys(toys: LovenseUser['toys']) {
     return this.lovenseToyRepo.save(
       Object.keys(toys).map((key) => ({
         id: key,
@@ -74,7 +74,7 @@ export class LovenseService {
     );
   }
 
-  async getCredentials(kcId: string, withoutUnlinked?: boolean) {
+  async getUser(kcId: string, withoutUnlinked?: boolean) {
     return this.userRepo.findOne({
       relations: ['toys'],
       where: { uid: kcId, unlinked: withoutUnlinked ? false : undefined },
@@ -115,23 +115,23 @@ export class LovenseService {
     });
   }
 
-  async sendMissedInvites(credentials: User) {
-    const invites = await this.getSessionInvites(credentials.uid);
+  async sendMissedInvites(user: User) {
+    const invites = await this.getSessionInvites(user.uid);
     for (const invite of invites) {
       if (invite.pleasureSession.isDiscord) {
         // Send discord invite
-        const discordUid = await getDiscordUidByKCId(credentials.uid);
+        const discordUid = await getDiscordUidByKCId(user.uid);
         if (!discordUid) continue;
-        const user = await this.discordSrv.getUser(discordUid);
+        const discordUser = await this.discordSrv.getUser(discordUid);
         const initiatorDiscordUid = await getDiscordUidByKCId(
           invite.pleasureSession.initiatorId,
         );
         const initiator = await this.discordSrv.getUser(initiatorDiscordUid);
         if (!user) continue;
         await this.sendInviteMessage({
-          user,
+          user: discordUser,
           initiator,
-          creds: credentials,
+          lovenseUser: user,
           invitedUsers: [],
           session: invite.pleasureSession,
         });
@@ -173,7 +173,7 @@ export class LovenseService {
     initiator: DiscordUser;
     session: PleasureSession;
     invitedUsers: DiscordUser[];
-    creds: User;
+    lovenseUser: User;
     initiatorInteraction?: ButtonInteraction<CacheType>;
   }) {
     if (!props.invitedUsers.length) {
@@ -211,7 +211,7 @@ export class LovenseService {
         //User has accepted the session
         //Update session to add user
         await this.userPleasureSessionRepo.save({
-          lovenseCredentialsUid: props.creds.uid,
+          uid: props.lovenseUser.uid,
           pleasureSessionId: props.session.id,
           inviteAccepted: true,
           lastActive: new Date(),
