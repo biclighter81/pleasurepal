@@ -7,7 +7,6 @@ export default class SocketAuthIoAdapter extends IoAdapter {
     server.use(async (socket, next) => {
       const { token } = socket.handshake.auth;
       try {
-        console.log(token);
         const res = await axios.get(
           `https://keycloak.rimraf.de/realms/pleasurepal/protocol/openid-connect/userinfo`,
           {
@@ -16,7 +15,15 @@ export default class SocketAuthIoAdapter extends IoAdapter {
             },
           },
         );
-        next();
+        if (res.status === 200) {
+          socket.handshake.auth = {
+            ...socket.handshake.auth,
+            ...res.data,
+          };
+          next();
+        } else {
+          throw new Error();
+        }
       } catch (error) {
         next(new Error('Authentication error'));
       }
