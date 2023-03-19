@@ -1,3 +1,4 @@
+import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
@@ -7,17 +8,16 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { LovenseCredentials } from './lovense-credentials.entity';
 import { PleasureSession } from './pleasure-session.entity';
 
-@Entity('lovense_credentials_pleasure_session')
-export class LovenseCredentials_PleasureSession {
+@Entity('user_pleasure_session')
+export class User_PleasureSession {
   @PrimaryColumn()
-  lovenseCredentialsUid: string;
+  uid: string;
 
-  @ManyToOne(() => LovenseCredentials, (credentials) => credentials.sessions)
-  @JoinColumn({ name: 'lovenseCredentialsUid' })
-  lovenseCredentials: LovenseCredentials;
+  @ManyToOne(() => User, (user) => user.sessions)
+  @JoinColumn({ name: 'uid' })
+  user: User;
 
   @PrimaryColumn()
   pleasureSessionId: string;

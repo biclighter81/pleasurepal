@@ -68,7 +68,7 @@ export class LinkCommand {
           await this.discordSrv.pollLinkStatus(
             interaction,
             qr,
-            credentials,
+            kcUser.id,
             true,
           );
           return actionCollector.stop();
@@ -102,7 +102,7 @@ export class LinkCommand {
         kcUser.id,
         kcUser.username,
       );
-      return this.discordSrv.pollLinkStatus(interaction, qr, credentials);
+      return this.discordSrv.pollLinkStatus(interaction, qr, kcUser.id);
     }
   }
 }

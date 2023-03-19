@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { LovenseCredentials_PleasureSession } from './credentials_plesure_session.join-entity';
+import { User_PleasureSession } from './credentials_plesure_session.join-entity';
 import { LovenseActionQueue } from './lovense-action-queue.entity';
 
 @Entity()
@@ -34,12 +34,10 @@ export class PleasureSession {
   @CreateDateColumn()
   createdAt: Date;
 
-  @OneToMany(
-    () => LovenseCredentials_PleasureSession,
-    (join) => join.pleasureSession,
-    { cascade: true },
-  )
-  credentials: LovenseCredentials_PleasureSession[];
+  @OneToMany(() => User_PleasureSession, (join) => join.pleasureSession, {
+    cascade: true,
+  })
+  credentials: User_PleasureSession[];
 
   @OneToMany(() => LovenseActionQueue, (action) => action.session)
   actionQueue: LovenseActionQueue[];

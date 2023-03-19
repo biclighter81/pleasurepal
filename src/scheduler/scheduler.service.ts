@@ -69,7 +69,7 @@ export class SchedulerService {
         if (session) {
           const allPromises = session.credentials.map((p) =>
             this.lovenseControlSrv.sendLovenseFunction({
-              kcId: p.lovenseCredentialsUid,
+              kcId: p.uid,
               ...(JSON.parse(action.action) as LovenseFunctionCommand),
             }),
           );
@@ -114,9 +114,7 @@ export class SchedulerService {
       if (sessionUsers) {
         const allPromises = sessionUsers.credentials.map((p) => {
           return new Promise<void>(async (resolve, reject) => {
-            const discordUid = await getDiscordUidByKCId(
-              p.lovenseCredentialsUid,
-            );
+            const discordUid = await getDiscordUidByKCId(p.uid);
             this.discordSrv.sendMessage(
               discordUid,
               `:x: Your session \`${session.id}\` has expired after 30 minutes without use!`,

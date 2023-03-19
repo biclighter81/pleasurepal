@@ -35,9 +35,8 @@ export class PleasureCommand {
     }
     //check for session rights
     if (
-      !info.session.credentials.find(
-        (c) => c.lovenseCredentialsUid === info.credentials.uid,
-      )?.hasControl
+      !info.session.credentials.find((c) => c.uid === info.credentials.uid)
+        ?.hasControl
     ) {
       await interaction.reply({
         content: ':lock: You do not have control over the current session!',

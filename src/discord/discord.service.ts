@@ -1,12 +1,17 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Client, CommandInteraction, Message, User } from 'discord.js';
+import {
+  Client,
+  CommandInteraction,
+  Message,
+  User as DiscordUser,
+} from 'discord.js';
 import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
-import { LovenseCredentials } from 'src/lovense/entities/lovense-credentials.entity';
+import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -14,8 +19,8 @@ export class DiscordService {
   constructor(
     @InjectDiscordClient()
     private readonly discordClient: Client,
-    @InjectRepository(LovenseCredentials)
-    private readonly lovenseCredRepo: Repository<LovenseCredentials>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async sendMessage(discordUid: string, message: string) {
@@ -44,9 +49,9 @@ export class DiscordService {
   }
 
   async pollLinkStatus(
-    interaction: CommandInteraction | User,
+    interaction: CommandInteraction | DiscordUser,
     qr: QRCodeResponse,
-    credentials: LovenseCredentials,
+    uid: string,
     hasReplied?: boolean,
   ) {
     //send qr code
@@ -61,11 +66,12 @@ export class DiscordService {
         return;
       }
       //poll for heartbeat
-      credentials = await this.lovenseCredRepo.findOne({
-        where: { uid: credentials.uid },
+      let credentials = await this.userRepo.findOne({
+        where: { uid: uid },
       });
+      console.log(credentials);
       if (
-        credentials.lastHeartbeat?.getTime() >
+        credentials?.lastHeartbeat?.getTime() >
         Date.now() - LOVENSE_HEARTBEAT_INTERVAL
       ) {
         if (message) {
@@ -87,7 +93,7 @@ export class DiscordService {
 
   async sendQr(
     qr: QRCodeResponse,
-    interaction: CommandInteraction | User,
+    interaction: CommandInteraction | DiscordUser,
     hasReplied?: boolean,
   ) {
     const embedBuilder = buildLovenseQrCodeEmbed(qr.message);

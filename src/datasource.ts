@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { LovenseCredentials_PleasureSession } from './lovense/entities/credentials_plesure_session.join-entity';
 import { LovenseActionQueue } from './lovense/entities/lovense-action-queue.entity';
-import { LovenseCredentials } from './lovense/entities/lovense-credentials.entity';
 import { PleasureSession } from './lovense/entities/pleasure-session.entity';
 import { LovenseToy } from './lovense/entities/lovense-toy.entity';
+import { User } from './user/entities/user.entity';
+import { User_PleasureSession } from './lovense/entities/credentials_plesure_session.join-entity';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -16,10 +16,10 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   entities: [
-    LovenseCredentials,
+    User,
     LovenseToy,
     PleasureSession,
-    LovenseCredentials_PleasureSession,
+    User_PleasureSession,
     LovenseActionQueue,
   ],
   schema: process.env.DB_SCHEMA,

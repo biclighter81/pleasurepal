@@ -50,7 +50,7 @@ export class SessionCommand {
         kcUser.id,
         kcUser.username,
       );
-      await this.discordSrv.pollLinkStatus(interaction, qr, credentials);
+      await this.discordSrv.pollLinkStatus(interaction, qr, kcUser.id);
       return;
     }
     const session = await this.sessionSrv.getCurrentSession(kcUser.id);

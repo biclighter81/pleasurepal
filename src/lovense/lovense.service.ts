@@ -2,41 +2,46 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LovenseCredentials as LovenseCredentialsDto } from './dto/lovense-credentials.dto';
-import { LovenseCredentials } from './entities/lovense-credentials.entity';
 import { LovenseToy } from './entities/lovense-toy.entity';
 import axios from 'axios';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { getDiscordUidByKCId } from 'src/lib/keycloak';
-import { ButtonInteraction, CacheType, ComponentType, User } from 'discord.js';
+import {
+  ButtonInteraction,
+  CacheType,
+  ComponentType,
+  User as DiscordUser,
+} from 'discord.js';
 import { SESSION_INVIATION_COMPONENTS } from 'src/lib/interaction-helper';
-import { LovenseCredentials_PleasureSession } from './entities/credentials_plesure_session.join-entity';
 import { PleasureSession } from './entities/pleasure-session.entity';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
 import { DiscordService } from 'src/discord/discord.service';
+import { User } from 'src/user/entities/user.entity';
+import { User_PleasureSession } from './entities/credentials_plesure_session.join-entity';
 
 @Injectable()
 export class LovenseService {
   private readonly logger: Logger = new Logger(LovenseService.name);
 
   constructor(
-    @InjectRepository(LovenseCredentials)
-    private readonly lovenseCredRepo: Repository<LovenseCredentials>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     @InjectRepository(LovenseToy)
     private readonly lovenseToyRepo: Repository<LovenseToy>,
-    @InjectRepository(LovenseCredentials_PleasureSession)
-    private readonly lovenseCredPleasureSessionRepo: Repository<LovenseCredentials_PleasureSession>,
+    @InjectRepository(User_PleasureSession)
+    private readonly userPleasureSessionRepo: Repository<User_PleasureSession>,
     public readonly discordSrv: DiscordService,
   ) {}
 
   async callback(body: LovenseCredentialsDto) {
-    const existingCreds = await this.lovenseCredRepo.findOne({
+    const existingCreds = await this.userRepo.findOne({
       relations: ['toys'],
       where: { uid: body.uid },
     });
     // ignore webhook on unlinked
     if (existingCreds?.unlinked) return;
     const toys = await this.saveCallbackToys(body.toys);
-    const credentials = await this.lovenseCredRepo.save({
+    const credentials = await this.userRepo.save({
       ...body,
       toys: toys,
       lastHeartbeat: new Date(),
@@ -70,7 +75,7 @@ export class LovenseService {
   }
 
   async getCredentials(kcId: string, withoutUnlinked?: boolean) {
-    return this.lovenseCredRepo.findOne({
+    return this.userRepo.findOne({
       relations: ['toys'],
       where: { uid: kcId, unlinked: withoutUnlinked ? false : undefined },
     });
@@ -100,17 +105,17 @@ export class LovenseService {
   }
 
   async getSessionInvites(kcId: string) {
-    return this.lovenseCredPleasureSessionRepo.find({
+    return this.userPleasureSessionRepo.find({
       relations: ['pleasureSession'],
       where: {
-        lovenseCredentialsUid: kcId,
+        uid: kcId,
         pleasureSession: { active: true },
         inviteAccepted: false,
       },
     });
   }
 
-  async sendMissedInvites(credentials: LovenseCredentials) {
+  async sendMissedInvites(credentials: User) {
     const invites = await this.getSessionInvites(credentials.uid);
     for (const invite of invites) {
       if (invite.pleasureSession.isDiscord) {
@@ -135,19 +140,19 @@ export class LovenseService {
   }
 
   async unlinkLovense(kcId: string) {
-    await this.lovenseCredPleasureSessionRepo.update(
+    await this.userPleasureSessionRepo.update(
       {
-        lovenseCredentialsUid: kcId,
+        uid: kcId,
       },
       { active: false },
     );
-    return this.lovenseCredRepo.update({ uid: kcId }, { unlinked: true });
+    return this.userRepo.update({ uid: kcId }, { unlinked: true });
   }
 
   async getLinkQrCode(kcId: string, username: string): Promise<QRCodeResponse> {
     try {
       //reset unlinked flag if it was set
-      await this.lovenseCredRepo.update({ uid: kcId }, { unlinked: false });
+      await this.userRepo.update({ uid: kcId }, { unlinked: false });
       const res = await axios.post<QRCodeResponse>(
         `https://api.lovense-api.com/api/lan/getQrCode`,
         {
@@ -164,24 +169,24 @@ export class LovenseService {
   }
 
   async sendInviteMessage(props: {
-    user: User;
-    initiator: User;
+    user: DiscordUser;
+    initiator: DiscordUser;
     session: PleasureSession;
-    invitedUsers: User[];
-    creds: LovenseCredentials;
+    invitedUsers: DiscordUser[];
+    creds: User;
     initiatorInteraction?: ButtonInteraction<CacheType>;
   }) {
     if (!props.invitedUsers.length) {
-      const invites = await this.lovenseCredPleasureSessionRepo.find({
+      const invites = await this.userPleasureSessionRepo.find({
         where: {
           pleasureSessionId: props.session.id,
         },
       });
       props.invitedUsers = await Promise.all(
         invites
-          .filter((i) => i.lovenseCredentialsUid != props.session.initiatorId)
+          .filter((i) => i.uid != props.session.initiatorId)
           .map(async (i) => {
-            const uid = await getDiscordUidByKCId(i.lovenseCredentialsUid);
+            const uid = await getDiscordUidByKCId(i.uid);
             const user = await this.discordSrv.getUser(uid);
             return user;
           }),
@@ -205,7 +210,7 @@ export class LovenseService {
       if (i.customId == 'joinSession') {
         //User has accepted the session
         //Update session to add user
-        await this.lovenseCredPleasureSessionRepo.save({
+        await this.userPleasureSessionRepo.save({
           lovenseCredentialsUid: props.creds.uid,
           pleasureSessionId: props.session.id,
           inviteAccepted: true,

@@ -1,3 +1,5 @@
+import { User_PleasureSession } from 'src/lovense/entities/credentials_plesure_session.join-entity';
+import { LovenseToy } from 'src/lovense/entities/lovense-toy.entity';
 import {
   Column,
   CreateDateColumn,
@@ -8,11 +10,9 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { LovenseCredentials_PleasureSession } from './credentials_plesure_session.join-entity';
-import { LovenseToy } from './lovense-toy.entity';
 
-@Entity('lovense_credentials')
-export class LovenseCredentials {
+@Entity('user')
+export class User {
   @PrimaryColumn()
   uid: string;
   @Column({ nullable: true })
@@ -38,15 +38,16 @@ export class LovenseCredentials {
   @Column({ default: 'false' })
   unlinked: boolean;
 
-  @ManyToMany(() => LovenseToy, (toy) => toy.credentials)
+  @ManyToMany(() => LovenseToy, (toy) => toy.user)
   @JoinTable()
   toys: LovenseToy[];
 
-  @OneToMany(
-    () => LovenseCredentials_PleasureSession,
-    (join) => join.lovenseCredentials,
-  )
-  sessions: LovenseCredentials_PleasureSession[];
+  @ManyToMany(() => User, (credentials) => credentials.friends)
+  @JoinTable()
+  friends: User[];
+
+  @OneToMany(() => User_PleasureSession, (join) => join.user)
+  sessions: User_PleasureSession[];
 
   @Column({ nullable: true })
   lastHeartbeat: Date;
