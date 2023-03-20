@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { KeycloakUser } from './interfaces/keycloak';
+import { FriendlyKeycloakUser, KeycloakUser } from './interfaces/keycloak';
 
 export async function getKCUserByDiscordId(
   discordId: string,
@@ -71,4 +71,26 @@ export async function getKCToken(): Promise<string> {
     console.error(err.response.data);
     throw err;
   }
+}
+
+export async function searchKCUser(q: string): Promise<FriendlyKeycloakUser[]> {
+  const token = await getKCToken();
+  const res = await axios.get<KeycloakUser[]>(
+    `${process.env.KEYCLOAK_URL}/admin/realms/pleasurepal/users?q=username:${q}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  return res.data.map((user) => ({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    discordUsername: user.attributes?.discord_username ? user.attributes.discord_username[0] : undefined,
+    discordUid: user.attributes?.discord_uid ? user.attributes.discord_uid[0] : undefined,
+  }))
 }

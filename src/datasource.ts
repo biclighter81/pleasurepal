@@ -4,6 +4,7 @@ import { PleasureSession } from './lovense/entities/pleasure-session.entity';
 import { LovenseToy } from './lovense/entities/lovense-toy.entity';
 import { User } from './user/entities/user.entity';
 import { User_PleasureSession } from './lovense/entities/user_plesure_session.join-entity';
+import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -21,6 +22,7 @@ export const AppDataSource = new DataSource({
     PleasureSession,
     User_PleasureSession,
     LovenseActionQueue,
+    UserFriendshipRequest
   ],
   schema: process.env.DB_SCHEMA,
   synchronize: true,

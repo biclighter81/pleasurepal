@@ -9,11 +9,14 @@ import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway(80, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: '*',
   },
 })
 export class FriendSocketGateway {
-  private connectedUsers: any[] = [];
+  public connectedUsers: {
+    id: string;
+    socketId: string;
+  }[] = [];
   @WebSocketServer()
   server: Server;
 

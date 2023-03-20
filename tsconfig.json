@@ -18,5 +18,9 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "useDefineForClassFields": true
+  },
+  "watchOptions": {
+    "watchDirectory": "fixedPollingInterval",
+    "watchFile": "fixedPollingInterval"
   }
 }

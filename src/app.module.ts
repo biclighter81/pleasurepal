@@ -66,5 +66,5 @@ import { MembershipModule } from './membership/membership.module';
   providers: [AppService],
 })
 export class AppModule {
-  constructor() {}
+  constructor() { }
 }
