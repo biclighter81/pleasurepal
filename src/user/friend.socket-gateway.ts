@@ -23,8 +23,6 @@ export class FriendSocketGateway {
   @SubscribeMessage('connect')
   async handleConnection(@ConnectedSocket() client: Socket) {
     const { sub } = client.handshake.auth;
-    const idx = this.connectedUsers.findIndex((user) => user.id === sub);
-    this.connectedUsers.splice(idx, 1);
     this.connectedUsers.push({
       id: sub,
       socketId: client.id,
@@ -32,19 +30,9 @@ export class FriendSocketGateway {
     client.join(sub);
   }
 
-  @SubscribeMessage('friendship-request')
-  async handleFriendshipRequest(
-    @MessageBody() payload: any,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const sender = client.handshake.auth;
-    const receiver = this.connectedUsers.find(
-      (user) => user.id === payload.receiverId,
-    )?.socketId;
-    if (receiver) {
-      this.server.to(receiver).emit('friendship-request', {
-        sender: sender.sub,
-      });
-    }
+  @SubscribeMessage('disconnect')
+  async handleDisconnect(@ConnectedSocket() client: Socket) {
+    const idx = this.connectedUsers.findIndex((user) => user.socketId === client.id);
+    this.connectedUsers.splice(idx, 1);
   }
 }

@@ -8,6 +8,7 @@ async function bootstrap() {
   //set cors to allow all
   app.enableCors();
   const socketAuthAdapter = new SocketAuthIoAdapter(app);
+  await socketAuthAdapter.connectRedis();
   app.useWebSocketAdapter(socketAuthAdapter);
   await app.listen(3001);
 }

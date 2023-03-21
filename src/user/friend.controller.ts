@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, Post, UseGuards } from '@nestjs/common';
 import { AuthenticatedUser, AuthGuard } from 'nest-keycloak-connect';
+import { FriendshipRequestAlreadyExistsError } from '../lib/errors/friend';
 import { JWTKeycloakUser } from '../lib/interfaces/keycloak';
 import { FriendService } from './friend.service';
 
@@ -13,7 +14,22 @@ export class FriendController {
     @AuthenticatedUser() user: JWTKeycloakUser,
     @Body('uid') uid: string,
   ) {
-    return this.friendServer.requestFriendship(user.sub, uid);
+    try {
+      return await this.friendServer.requestFriendship(user.sub, uid);
+    } catch (e) {
+      if (e instanceof FriendshipRequestAlreadyExistsError) {
+        throw new HttpException({
+          message: e.message,
+          name: e.name,
+        }, 400);
+      }
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('requests')
+  async getFriendshipRequests(@AuthenticatedUser() user: JWTKeycloakUser) {
+    return this.friendServer.getFriendshipRequests(user.sub);
   }
 
 }

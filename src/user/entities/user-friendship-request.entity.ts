@@ -2,20 +2,19 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
 export class UserFriendshipRequest {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-  @Column()
-  requstUid: string;
-  @Column()
+  @PrimaryColumn()
+  requestUid: string;
+  @PrimaryColumn()
   uid: string;
-  @Column({ default: false })
-  accepted: boolean;
+  @Column({ nullable: true })
+  rejectedAt: Date;
   @Column({ nullable: true })
   acceptedAt: Date;
   @UpdateDateColumn()

@@ -1,8 +1,21 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 import axios from 'axios';
+import { createClient } from 'redis';
+import { ServerOptions } from 'socket.io';
 
 export default class SocketAuthIoAdapter extends IoAdapter {
-  createIOServer(port: number, options?: any): any {
+  private adapterConstructor: ReturnType<typeof createAdapter>;
+
+  async connectRedis() {
+    const pubClient = createClient({
+      url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+    })
+    const subClient = pubClient.duplicate();
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    this.adapterConstructor = createAdapter(pubClient, subClient);
+  }
+  createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
     server.use(async (socket, next) => {
       const { token } = socket.handshake.auth;
@@ -28,6 +41,7 @@ export default class SocketAuthIoAdapter extends IoAdapter {
         next(new Error('Authentication error'));
       }
     });
+    server.adapter(this.adapterConstructor);
     return server;
   }
 }
