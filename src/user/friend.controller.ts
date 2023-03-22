@@ -13,7 +13,7 @@ import { FriendService } from './friend.service';
 
 @Controller('friends')
 export class FriendController {
-  constructor(private readonly friendServer: FriendService) {}
+  constructor(private readonly friendServer: FriendService) { }
 
   @UseGuards(AuthGuard)
   @Post('request')
@@ -40,7 +40,7 @@ export class FriendController {
   @UseGuards(AuthGuard)
   @Get('requests')
   async getFriendshipRequests(@AuthenticatedUser() user: JWTKeycloakUser) {
-    return this.friendServer.getFriendshipRequests(user.sub);
+    return this.friendServer.getPending(user.sub);
   }
 
   @UseGuards(AuthGuard)
@@ -53,5 +53,17 @@ export class FriendController {
       throw new HttpException('Missing uid in body', 400);
     }
     return this.friendServer.accept(user.sub, uid);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('reject')
+  async rejectFriendshipRequest(
+    @AuthenticatedUser() user: JWTKeycloakUser,
+    @Body('uid') uid: string,
+  ) {
+    if (!uid) {
+      throw new HttpException('Missing uid in body', 400);
+    }
+    return this.friendServer.reject(user.sub, uid);
   }
 }

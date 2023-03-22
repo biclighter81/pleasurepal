@@ -11,3 +11,10 @@ export class FriendshipRequestNotFound extends Error {
     this.name = 'FriendshipRequestNotFound';
   }
 }
+
+export class FriendshipRequestBlocked extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FriendshipRequestBlocked';
+  }
+}

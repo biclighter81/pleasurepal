@@ -10,13 +10,15 @@ import {
 @Entity()
 export class UserFriendshipRequest {
   @PrimaryColumn()
-  requestUid: string;
+  from: string;
   @PrimaryColumn()
-  uid: string;
+  to: string;
   @Column({ nullable: true })
   rejectedAt: Date;
   @Column({ nullable: true })
   acceptedAt: Date;
+  @Column({ nullable: true })
+  blockedAt: Date;
   @UpdateDateColumn()
   updatedAt: Date;
   @CreateDateColumn()
