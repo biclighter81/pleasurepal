@@ -1,4 +1,4 @@
-export class FriendshipRequestAlreadyExistsError extends Error {
+export class FriendshipRequestAlreadyExists extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'FriendshipRequestAlreadyExistsError';
@@ -16,5 +16,12 @@ export class FriendshipRequestBlocked extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'FriendshipRequestBlocked';
+  }
+}
+
+export class FriendshipAlreadyExists extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FrindshipAlreadyExists';
   }
 }

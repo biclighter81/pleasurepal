@@ -7,13 +7,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticatedUser, AuthGuard } from 'nest-keycloak-connect';
-import { FriendshipRequestAlreadyExistsError } from '../lib/errors/friend';
+import {
+  FriendshipAlreadyExists,
+  FriendshipRequestAlreadyExists,
+  FriendshipRequestBlocked,
+  FriendshipRequestNotFound,
+} from '../lib/errors/friend';
 import { JWTKeycloakUser } from '../lib/interfaces/keycloak';
 import { FriendService } from './friend.service';
 
 @Controller('friends')
 export class FriendController {
-  constructor(private readonly friendServer: FriendService) { }
+  constructor(private readonly friendServer: FriendService) {}
 
   @UseGuards(AuthGuard)
   @Post('request')
@@ -24,7 +29,12 @@ export class FriendController {
     try {
       return await this.friendServer.requestFriendship(user.sub, uid);
     } catch (e) {
-      if (e instanceof FriendshipRequestAlreadyExistsError) {
+      if (
+        e instanceof FriendshipAlreadyExists ||
+        e instanceof FriendshipRequestAlreadyExists ||
+        e instanceof FriendshipRequestBlocked ||
+        e instanceof FriendshipAlreadyExists
+      ) {
         throw new HttpException(
           {
             message: e.message,
@@ -35,6 +45,12 @@ export class FriendController {
       }
       throw new HttpException('Something went wrong', 500);
     }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('')
+  async getFriends(@AuthenticatedUser() user: JWTKeycloakUser) {
+    return this.friendServer.getFriends(user.sub);
   }
 
   @UseGuards(AuthGuard)
@@ -52,7 +68,20 @@ export class FriendController {
     if (!uid) {
       throw new HttpException('Missing uid in body', 400);
     }
-    return this.friendServer.accept(user.sub, uid);
+    try {
+      return await this.friendServer.accept(uid, user.sub);
+    } catch (e) {
+      if (e instanceof FriendshipRequestNotFound) {
+        throw new HttpException(
+          {
+            message: e.message,
+            name: e.name,
+          },
+          400,
+        );
+      }
+      throw new HttpException('Something went wrong', 500);
+    }
   }
 
   @UseGuards(AuthGuard)
@@ -64,6 +93,19 @@ export class FriendController {
     if (!uid) {
       throw new HttpException('Missing uid in body', 400);
     }
-    return this.friendServer.reject(user.sub, uid);
+    try {
+      return await this.friendServer.reject(uid, user.sub);
+    } catch (e) {
+      if (e instanceof FriendshipRequestNotFound) {
+        throw new HttpException(
+          {
+            message: e.message,
+            name: e.name,
+          },
+          400,
+        );
+      }
+      throw new HttpException('Something went wrong', 500);
+    }
   }
 }

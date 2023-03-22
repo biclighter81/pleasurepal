@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import {
-  FriendshipRequestAlreadyExistsError,
+  FriendshipRequestAlreadyExists,
   FriendshipRequestBlocked,
   FriendshipRequestNotFound,
+  FriendshipAlreadyExists,
 } from '../lib/errors/friend';
 import { UserFriendshipRequest } from './entities/user-friendship-request.entity';
 import { FriendSocketGateway } from './friend.socket-gateway';
@@ -17,24 +18,24 @@ export class FriendService {
     @InjectRepository(UserFriendshipRequest)
     private readonly userFriendshipRequestRepo: Repository<UserFriendshipRequest>,
     private readonly friendSocketGateway: FriendSocketGateway,
-  ) { }
+  ) {}
 
   async fetchByTo(from: string, to: string) {
     return this.userFriendshipRequestRepo.findOne({
       where: {
         from: to,
         to: from,
-      }
-    })
+      },
+    });
   }
 
   async fetchByFrom(from: string, to: string) {
     return this.userFriendshipRequestRepo.findOne({
       where: {
         from,
-        to
-      }
-    })
+        to,
+      },
+    });
   }
 
   async emitRequest(from: string, to: string) {
@@ -44,9 +45,31 @@ export class FriendService {
     );
     if (userSockets.length) {
       for (const userSocket of userSockets) {
-        socket
-          .to(userSocket.socketId)
-          .emit('friendship-request', { from, to });
+        socket.to(userSocket.socketId).emit('friendship-request', { from, to });
+      }
+    }
+  }
+
+  async emitAccept(from: string, to: string, byRequest?: boolean) {
+    const socket = this.friendSocketGateway.server;
+    const userSockets = this.friendSocketGateway.connectedUsers.filter(
+      (user) => user.id === from,
+    );
+    if (userSockets.length) {
+      for (const userSocket of userSockets) {
+        socket.to(userSocket.socketId).emit('friendship-accept', { from, to });
+      }
+    }
+    if (byRequest) {
+      const userSockets = this.friendSocketGateway.connectedUsers.filter(
+        (user) => user.id === to,
+      );
+      if (userSockets.length) {
+        for (const userSocket of userSockets) {
+          socket
+            .to(userSocket.socketId)
+            .emit('friendship-accept-by-request', { from, to });
+        }
       }
     }
   }
@@ -54,61 +77,79 @@ export class FriendService {
   async requestFriendship(from: string, to: string) {
     const byFrom = await this.fetchByFrom(from, to);
     const byTo = await this.fetchByTo(from, to);
-    if (!byFrom && !byTo || (byFrom.acceptedAt || byTo.acceptedAt)) {
+    if (!byFrom && !byTo) {
       // No friendship request exists
       const req = await this.userFriendshipRequestRepo.save({
         from,
-        to
-      })
+        to,
+      });
       await this.emitRequest(from, to);
       return req;
     }
-    if (byFrom && !byFrom.acceptedAt && !byFrom.rejectedAt && !byFrom.blockedAt) {
+    if (
+      byFrom &&
+      !byFrom.acceptedAt &&
+      !byFrom.rejectedAt &&
+      !byFrom.blockedAt
+    ) {
       // Friendship request exists
-      throw new FriendshipRequestAlreadyExistsError('Friendship request already exists!',);
+      throw new FriendshipRequestAlreadyExists(
+        'Friendship request already exists!',
+      );
     }
-    if (byUid && byUid.rejectedAt) {
+    if (byFrom && byFrom.acceptedAt) {
+      // Friendship request exists and was accepted
+      throw new FriendshipAlreadyExists('Friendship already exists!');
+    }
+    if (byFrom && byFrom.rejectedAt) {
       // Friendship request exists but was rejected resend request
       const req = await this.userFriendshipRequestRepo.save({
-        uid,
-        requestUid: from,
+        from,
+        to,
         rejectedAt: null,
-      })
-      await this.emitRequest(from, uid);
+      });
+      await this.emitRequest(from, to);
       return req;
     }
-    if (byUid && byUid.blockedAt) {
+    if (byFrom && byFrom.blockedAt) {
       // Friendship request exists but user was blocked
       throw new FriendshipRequestBlocked('Friendship request blocked!');
     }
-    if (byfrom && !byfrom.acceptedAt && !byfrom.rejectedAt && !byfrom.blockedAt) {
+    if (byTo && !byTo.acceptedAt && !byTo.rejectedAt && !byTo.blockedAt) {
       // Friendship request exists outgoing from requested user
       const req = await this.userFriendshipRequestRepo.save({
-        uid,
-        requestUid: from,
+        from: to,
+        to: from,
         acceptedAt: new Date(),
-      })
+      });
+      await this.emitAccept(to, from, true);
       return req;
     }
-    if (byfrom && byfrom.rejectedAt) {
+    if (byTo && byTo.acceptedAt) {
+      // Friendship request exists outgoing from requested user and was accepted
+      throw new FriendshipRequestAlreadyExists(
+        'Friendship request already exists!',
+      );
+    }
+    if (byTo && byTo.rejectedAt) {
       // Friendship request exists outgoing from requested user but was rejected by user reset rejectedAt
       const req = await this.userFriendshipRequestRepo.save({
-        uid,
-        requestUid: from,
+        from: to,
+        to: from,
         rejectedAt: null,
         acceptedAt: new Date(),
-      })
+      });
       return req;
     }
-    if (byfrom && byfrom.blockedAt) {
+    if (byTo && byTo.blockedAt) {
       // Friendship request exists outgoing from requested user but was blocked by user reset blockedAt
       const req = await this.userFriendshipRequestRepo.save({
-        uid,
-        requestUid: from,
+        from: to,
+        to: from,
         rejectedAt: null,
         blockedAt: null,
         acceptedAt: new Date(),
-      })
+      });
       return req;
     }
   }
@@ -116,22 +157,19 @@ export class FriendService {
   async getPending(uid: string) {
     return this.userFriendshipRequestRepo.find({
       where: {
-        uid,
+        to: uid,
         acceptedAt: IsNull(),
         rejectedAt: IsNull(),
+        blockedAt: IsNull(),
       },
     });
   }
 
-  async reject(uid: string, from: string) {
-    const socket = this.friendSocketGateway.server;
-    const userSockets = this.friendSocketGateway.connectedUsers.filter(
-      (user) => user.id === from,
-    );
+  async reject(from: string, to: string) {
     const request = await this.userFriendshipRequestRepo.findOne({
       where: {
-        requestUid: from,
-        uid,
+        from,
+        to,
       },
     });
     if (!request) {
@@ -139,30 +177,21 @@ export class FriendService {
     }
     const result = await this.userFriendshipRequestRepo.update(
       {
-        requestUid: from,
-        uid,
+        from,
+        to,
       },
       {
         rejectedAt: new Date(),
       },
     );
-    if (userSockets.length) {
-      for (const userSocket of userSockets) {
-        socket.to(userSocket.socketId).emit('friendship-rejected', { uid });
-      }
-    }
     return result;
   }
 
-  async block(uid: string, from: string) {
-    const socket = this.friendSocketGateway.server;
-    const userSockets = this.friendSocketGateway.connectedUsers.filter(
-      (user) => user.id === from,
-    );
+  async block(from: string, to: string) {
     const request = await this.userFriendshipRequestRepo.findOne({
       where: {
-        requestUid: from,
-        uid,
+        from,
+        to,
       },
     });
     if (!request) {
@@ -170,30 +199,21 @@ export class FriendService {
     }
     const result = await this.userFriendshipRequestRepo.update(
       {
-        requestUid: from,
-        uid,
+        from,
+        to,
       },
       {
         blockedAt: new Date(),
       },
     );
-    if (userSockets.length) {
-      for (const userSocket of userSockets) {
-        socket.to(userSocket.socketId).emit('friendship-blocked', { uid });
-      }
-    }
     return result;
   }
 
-  async accept(uid: string, from: string) {
-    const socket = this.friendSocketGateway.server;
-    const userSockets = this.friendSocketGateway.connectedUsers.filter(
-      (user) => user.id === from,
-    );
+  async accept(from: string, to: string) {
     const request = await this.userFriendshipRequestRepo.findOne({
       where: {
-        requestUid: from,
-        uid,
+        from,
+        to,
       },
     });
     if (!request) {
@@ -201,20 +221,25 @@ export class FriendService {
     }
     const result = await this.userFriendshipRequestRepo.update(
       {
-        requestUid: from,
-        uid,
+        from,
+        to,
       },
       {
         acceptedAt: new Date(),
       },
     );
-    if (userSockets.length) {
-      for (const userSocket of userSockets) {
-        socket.to(userSocket.socketId).emit('friendship-accepted', { uid });
-      }
-    }
+    await this.emitAccept(from, to);
     return result;
   }
 
-  async getFriends(uid: string) { }
+  async getFriends(uid: string) {
+    return this.userFriendshipRequestRepo.find({
+      where: {
+        from: uid,
+        acceptedAt: Not(IsNull()),
+        rejectedAt: IsNull(),
+        blockedAt: IsNull(),
+      },
+    });
+  }
 }
