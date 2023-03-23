@@ -17,6 +17,7 @@ export default class SocketAuthIoAdapter extends IoAdapter {
   }
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
+    server.adapter(this.adapterConstructor);
     server.use(async (socket, next) => {
       const { token } = socket.handshake.auth;
       try {
@@ -41,7 +42,6 @@ export default class SocketAuthIoAdapter extends IoAdapter {
         next(new Error('Authentication error'));
       }
     });
-    server.adapter(this.adapterConstructor);
     return server;
   }
 }

@@ -21,6 +21,7 @@ import { LovenseModule } from './lovense/lovense.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { MembershipModule } from './membership/membership.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { MembershipModule } from './membership/membership.module';
     LovenseModule,
     SchedulerModule,
     MembershipModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import KeycloakConnect from 'keycloak-connect';
 import { KeycloakConnectModule } from 'nest-keycloak-connect';
+import { SocketGateway } from '../socket.gateway';
 import { UserFriendshipRequest } from './entities/user-friendship-request.entity';
 import { User } from './entities/user.entity';
 import { FriendController } from './friend.controller';
 import { FriendService } from './friend.service';
-import { FriendSocketGateway } from './friend.socket-gateway';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -23,7 +23,7 @@ dotenv.config();
       secret: process.env.KEYCLOAK_CLIENT_SECRET,
     })],
   controllers: [UserController, FriendController],
-  providers: [UserService, FriendService, FriendSocketGateway],
+  providers: [UserService, FriendService, SocketGateway],
 })
 
 export class UserModule { }

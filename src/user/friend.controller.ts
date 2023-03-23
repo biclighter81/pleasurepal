@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpException,
+  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -18,7 +19,7 @@ import { FriendService } from './friend.service';
 
 @Controller('friends')
 export class FriendController {
-  constructor(private readonly friendServer: FriendService) {}
+  constructor(private readonly friendServer: FriendService) { }
 
   @UseGuards(AuthGuard)
   @Post('request')
@@ -51,6 +52,15 @@ export class FriendController {
   @Get('')
   async getFriends(@AuthenticatedUser() user: JWTKeycloakUser) {
     return this.friendServer.getFriends(user.sub);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('friend/:uid')
+  async getFriend(
+    @AuthenticatedUser() user: JWTKeycloakUser,
+    @Param('uid') uid: string,
+  ) {
+    return this.friendServer.getFriend(user.sub, uid);
   }
 
   @UseGuards(AuthGuard)

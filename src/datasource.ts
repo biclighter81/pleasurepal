@@ -5,6 +5,9 @@ import { LovenseToy } from './lovense/entities/lovense-toy.entity';
 import { User } from './user/entities/user.entity';
 import { User_PleasureSession } from './lovense/entities/user_plesure_session.join-entity';
 import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
+import { Conversation } from './chat/entities/conversation.entity';
+import { ConversationParticipants } from './chat/entities/conversation-participants.entity';
+import { Message } from './chat/entities/message.entity';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -22,7 +25,10 @@ export const AppDataSource = new DataSource({
     PleasureSession,
     User_PleasureSession,
     LovenseActionQueue,
-    UserFriendshipRequest
+    UserFriendshipRequest,
+    Conversation,
+    ConversationParticipants,
+    Message
   ],
   schema: process.env.DB_SCHEMA,
   synchronize: true,

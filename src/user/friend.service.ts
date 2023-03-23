@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { IsNull, Not, Raw, Repository } from 'typeorm';
 import {
   FriendshipRequestAlreadyExists,
   FriendshipRequestBlocked,
   FriendshipRequestNotFound,
   FriendshipAlreadyExists,
 } from '../lib/errors/friend';
+import { SocketGateway } from '../socket.gateway';
 import { UserFriendshipRequest } from './entities/user-friendship-request.entity';
-import { FriendSocketGateway } from './friend.socket-gateway';
 
 @Injectable()
 export class FriendService {
@@ -17,8 +17,8 @@ export class FriendService {
   constructor(
     @InjectRepository(UserFriendshipRequest)
     private readonly userFriendshipRequestRepo: Repository<UserFriendshipRequest>,
-    private readonly friendSocketGateway: FriendSocketGateway,
-  ) {}
+    private readonly socketGateway: SocketGateway,
+  ) { }
 
   async fetchByTo(from: string, to: string) {
     return this.userFriendshipRequestRepo.findOne({
@@ -39,38 +39,18 @@ export class FriendService {
   }
 
   async emitRequest(from: string, to: string) {
-    const socket = this.friendSocketGateway.server;
-    const userSockets = this.friendSocketGateway.connectedUsers.filter(
-      (user) => user.id === to,
-    );
-    if (userSockets.length) {
-      for (const userSocket of userSockets) {
-        socket.to(userSocket.socketId).emit('friendship-request', { from, to });
-      }
-    }
+    const socket = this.socketGateway.server;
+    socket.to(to).emit('friendship-request', { from, to });
   }
 
   async emitAccept(from: string, to: string, byRequest?: boolean) {
-    const socket = this.friendSocketGateway.server;
-    const userSockets = this.friendSocketGateway.connectedUsers.filter(
-      (user) => user.id === from,
-    );
-    if (userSockets.length) {
-      for (const userSocket of userSockets) {
-        socket.to(userSocket.socketId).emit('friendship-accept', { from, to });
-      }
-    }
+    const socket = this.socketGateway.server;
+    socket.to(from).emit('friendship-accept', { from, to });
     if (byRequest) {
-      const userSockets = this.friendSocketGateway.connectedUsers.filter(
-        (user) => user.id === to,
-      );
-      if (userSockets.length) {
-        for (const userSocket of userSockets) {
-          socket
-            .to(userSocket.socketId)
-            .emit('friendship-accept-by-request', { from, to });
-        }
-      }
+
+      socket
+        .to(to)
+        .emit('friendship-accept-by-request', { from, to });
     }
   }
 
@@ -233,13 +213,20 @@ export class FriendService {
   }
 
   async getFriends(uid: string) {
-    return this.userFriendshipRequestRepo.find({
-      where: {
-        from: uid,
-        acceptedAt: Not(IsNull()),
-        rejectedAt: IsNull(),
-        blockedAt: IsNull(),
-      },
-    });
+    return this.userFriendshipRequestRepo.createQueryBuilder()
+      .where('"from" = :uid', { uid })
+      .orWhere('"to" = :uid', { uid })
+      .andWhere('"acceptedAt" IS NOT NULL')
+      .andWhere('"rejectedAt" IS NULL')
+      .andWhere('"blockedAt" IS NULL').getMany();
+  }
+
+  async getFriend(uid: string, friendUid: string) {
+    return this.userFriendshipRequestRepo.createQueryBuilder()
+      .where('("from" = :uid OR "to" = :uid)', { uid })
+      .andWhere('("from" = :friendUid OR "to" = :friendUid)', { friendUid })
+      .andWhere('"acceptedAt" IS NOT NULL')
+      .andWhere('"rejectedAt" IS NULL')
+      .andWhere('"blockedAt" IS NULL').getOne();
   }
 }
