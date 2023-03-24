@@ -25,3 +25,11 @@ export class FriendshipAlreadyExists extends Error {
     this.name = 'FrindshipAlreadyExists';
   }
 }
+
+
+export class FriendshipNotExists extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FriendshipNotExists';
+  }
+}

@@ -118,4 +118,5 @@ export class FriendController {
       throw new HttpException('Something went wrong', 500);
     }
   }
+
 }

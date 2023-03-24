@@ -1,10 +1,10 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ConversationParticipants } from "./conversation-participants.entity";
 import { Message } from "./message.entity";
 
 @Entity('conversation')
 export class Conversation {
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryColumn()
     id: string;
     @Column({ nullable: true })
     name: string;
@@ -15,8 +15,8 @@ export class Conversation {
     @CreateDateColumn()
     createdAt: Date;
 
-    @OneToMany(() => Message, message => message.conversation)
+    @OneToMany(() => Message, message => message.conversation, { cascade: true })
     messages: Message[];
-    @OneToMany(() => ConversationParticipants, conversationParticipants => conversationParticipants.conversation)
+    @OneToMany(() => ConversationParticipants, conversationParticipants => conversationParticipants.conversation, { cascade: true })
     participants: ConversationParticipants[];
 }

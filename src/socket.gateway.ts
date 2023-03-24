@@ -1,5 +1,5 @@
 import { InjectRepository } from "@nestjs/typeorm";
-import { ConnectedSocket, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { IsNull, Not, Repository } from "typeorm";
 import { UserFriendshipRequest } from "./user/entities/user-friendship-request.entity";
@@ -31,6 +31,18 @@ export class SocketGateway {
         await this.emitStatus('offline', friends, sub);
     }
 
+    @SubscribeMessage('online')
+    async handleOnline(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: { uid: string },
+    ) {
+        const { sub } = client.handshake.auth;
+        this.server.to(payload.uid).emit('friend-online', {
+            uid: sub,
+            isResponse: true,
+        });
+    }
+
     async emitStatus(
         status: 'online' | 'offline',
         friends: UserFriendshipRequest[],
@@ -43,14 +55,6 @@ export class SocketGateway {
                     .emit(`friend-${status}`, {
                         uid: sub,
                     });
-            }
-            if (status == 'online') {
-                this.server.to(
-                    sub
-                ).emit(
-                    'online-friends',
-                    friends.map((f) => (f.to == sub ? f.from : f.to)),
-                );
             }
         }
     }
