@@ -6,7 +6,7 @@ import { UserFriendshipRequest } from "./user/entities/user-friendship-request.e
 
 @WebSocketGateway(80, {
     cors: {
-        origin: process.env.NODE_ENV == 'development' ? '*' : 'pleasurepal.de',
+        origin: process.env.NODE_ENV == 'development' ? '*' : 'https://pleasurepal.de',
         credentials: true
     },
 })
