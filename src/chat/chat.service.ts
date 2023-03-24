@@ -3,9 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConversationNotFoundError } from '../lib/errors/chat';
 import { FriendshipNotExists } from '../lib/errors/friend';
-import { UserFriendshipRequest } from '../user/entities/user-friendship-request.entity';
 import { FriendService } from '../user/friend.service';
-import { ConversationParticipants } from './entities/conversation-participants.entity';
 import { Conversation } from './entities/conversation.entity';
 import * as crypto from 'crypto';
 import { Message } from './entities/message.entity';
@@ -24,18 +22,18 @@ export class ChatService {
     ) { }
 
     async getDirectConversation(requesterUid: string, uid: string, offset?: number) {
-        const conversation = await this.conversationRepo.findOne({
+        const conversations = await this.conversationRepo.find({
             where: {
                 participants: [
                     {
                         participantId: requesterUid,
-                    },
-                    {
-                        participantId: uid,
                     }
                 ],
             },
             relations: ['participants']
+        })
+        const conversation = conversations.find(conversation => {
+            return conversation.participants.length === 2 && conversation.participants.find(participant => participant.participantId === uid);
         })
         if (!conversation) {
             throw new ConversationNotFoundError('Conversation not found!');
