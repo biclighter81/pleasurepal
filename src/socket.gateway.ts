@@ -4,10 +4,14 @@ import { Server, Socket } from "socket.io";
 import { IsNull, Not, Repository } from "typeorm";
 import { UserFriendshipRequest } from "./user/entities/user-friendship-request.entity";
 
+// eslint-disable-next-line
+const dotenv = require('dotenv');
+dotenv.config();
+
 @WebSocketGateway(80, {
     cors: {
         origin: process.env.NODE_ENV == 'development' ? '*' : 'https://pleasurepal.de',
-        credentials: true
+        credentials: process.env.NODE_ENV == 'development' ? false : true,
     },
 })
 export class SocketGateway {
