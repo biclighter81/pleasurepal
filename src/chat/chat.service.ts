@@ -22,26 +22,40 @@ export class ChatService {
     ) { }
 
     async getDirectConversation(requesterUid: string, uid: string, offset?: number) {
-        const conversations = await this.conversationRepo.find({
+        const conversations = (await this.conversationRepo.query(`
+            select
+                cp1."conversationId"
+            from
+                conversation_participants cp1
+            inner join conversation_participants cp2 
+            on
+                cp1."conversationId" = cp2."conversationId"
+            where
+                cp1."participantId" = $1
+                and cp2."participantId" = $2
+                and cp1."conversationId" in (
+                select
+                    "conversationId" 
+                from
+                    conversation_participants
+                where
+                    "participantId" = $1
+            )
+            limit 1
+        `, [requesterUid, uid])) as { conversationId: string }[]
+        if (!conversations.length) {
+            throw new ConversationNotFoundError('Conversation not found!');
+        }
+        const conversation = await this.conversationRepo.findOne({
             where: {
-                participants: [
-                    {
-                        participantId: requesterUid,
-                    }
-                ],
+                id: conversations[0].conversationId,
             },
             relations: ['participants']
         })
-        const conversation = conversations.find(conversation => {
-            return conversation.participants.length === 2 && conversation.participants.find(participant => participant.participantId === uid);
-        })
-        if (!conversation) {
-            throw new ConversationNotFoundError('Conversation not found!');
-        }
         const messages = await this.messageRepo.find({
             where: {
                 conversation: {
-                    id: conversation.id,
+                    id: conversations[0].conversationId,
                 }
             },
             take: 100,
