@@ -7,6 +7,7 @@ import { UserFriendshipRequest } from "./user/entities/user-friendship-request.e
 @WebSocketGateway(80, {
     cors: {
         origin: '*',
+        credentials: true
     },
 })
 export class SocketGateway {
