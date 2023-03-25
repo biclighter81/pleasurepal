@@ -90,7 +90,25 @@ export async function searchKCUser(q: string): Promise<FriendlyKeycloakUser[]> {
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    discordUsername: user.attributes?.discord_username ? user.attributes.discord_username[0] : undefined,
-    discordUid: user.attributes?.discord_uid ? user.attributes.discord_uid[0] : undefined,
-  }))
+    discordUsername: user.attributes?.discord_username
+      ? user.attributes.discord_username[0]
+      : undefined,
+    discordUid: user.attributes?.discord_uid
+      ? user.attributes.discord_uid[0]
+      : undefined,
+  }));
+}
+
+export async function getKCUserById(id: string): Promise<KeycloakUser> {
+  const token = await getKCToken();
+  const res = await axios.get<KeycloakUser>(
+    `${process.env.KEYCLOAK_URL}/admin/realms/pleasurepal/users/${id}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  return res.data;
 }

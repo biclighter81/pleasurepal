@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { getKCUserById } from 'src/lib/keycloak';
 import { IsNull, Not, Raw, Repository } from 'typeorm';
 import {
   FriendshipRequestAlreadyExists,
@@ -18,7 +19,7 @@ export class FriendService {
     @InjectRepository(UserFriendshipRequest)
     private readonly userFriendshipRequestRepo: Repository<UserFriendshipRequest>,
     private readonly socketGateway: SocketGateway,
-  ) { }
+  ) {}
 
   async fetchByTo(from: string, to: string) {
     return this.userFriendshipRequestRepo.findOne({
@@ -47,10 +48,7 @@ export class FriendService {
     const socket = this.socketGateway.server;
     socket.to(from).emit('friendship-accept', { from, to });
     if (byRequest) {
-
-      socket
-        .to(to)
-        .emit('friendship-accept-by-request', { from, to });
+      socket.to(to).emit('friendship-accept-by-request', { from, to });
     }
   }
 
@@ -213,20 +211,45 @@ export class FriendService {
   }
 
   async getFriends(uid: string) {
-    return this.userFriendshipRequestRepo.createQueryBuilder()
+    const friends = await this.userFriendshipRequestRepo
+      .createQueryBuilder()
       .where('"from" = :uid', { uid })
       .orWhere('"to" = :uid', { uid })
       .andWhere('"acceptedAt" IS NOT NULL')
       .andWhere('"rejectedAt" IS NULL')
-      .andWhere('"blockedAt" IS NULL').getMany();
+      .andWhere('"blockedAt" IS NULL')
+      .getMany();
+    const users = await Promise.all(
+      friends.map(async (friend) => {
+        const friendUid = friend.from === uid ? friend.to : friend.from;
+        return getKCUserById(friendUid);
+      }),
+    );
+    return friends.map((f) => {
+      const friendUid = f.from === uid ? f.to : f.from;
+      const friend = users.find((u) => u.id === friendUid);
+      return {
+        ...f,
+        username: friend.username,
+        email: friend.email,
+      };
+    });
   }
 
   async getFriend(uid: string, friendUid: string) {
-    return this.userFriendshipRequestRepo.createQueryBuilder()
+    const friend = await this.userFriendshipRequestRepo
+      .createQueryBuilder()
       .where('("from" = :uid OR "to" = :uid)', { uid })
       .andWhere('("from" = :friendUid OR "to" = :friendUid)', { friendUid })
       .andWhere('"acceptedAt" IS NOT NULL')
       .andWhere('"rejectedAt" IS NULL')
-      .andWhere('"blockedAt" IS NULL').getOne();
+      .andWhere('"blockedAt" IS NULL')
+      .getOne();
+    const user = await getKCUserById(friendUid);
+    return {
+      ...friend,
+      username: user.username,
+      email: user.email,
+    };
   }
 }

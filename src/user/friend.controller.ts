@@ -19,7 +19,7 @@ import { FriendService } from './friend.service';
 
 @Controller('friends')
 export class FriendController {
-  constructor(private readonly friendServer: FriendService) { }
+  constructor(private readonly friendServer: FriendService) {}
 
   @UseGuards(AuthGuard)
   @Post('request')
@@ -119,4 +119,28 @@ export class FriendController {
     }
   }
 
+  @UseGuards(AuthGuard)
+  @Post('block')
+  async blockUser(
+    @AuthenticatedUser() user: JWTKeycloakUser,
+    @Body('uid') uid: string,
+  ) {
+    if (!uid) {
+      throw new HttpException('Missing uid in body', 400);
+    }
+    try {
+      return await this.friendServer.block(uid, user.sub);
+    } catch (e) {
+      if (e instanceof FriendshipRequestNotFound) {
+        throw new HttpException(
+          {
+            message: e.message,
+            name: e.name,
+          },
+          400,
+        );
+      }
+      throw new HttpException('Something went wrong', 500);
+    }
+  }
 }
