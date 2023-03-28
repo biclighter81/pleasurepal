@@ -28,7 +28,7 @@ export class SessionCommand {
     private readonly lovenseSrv: LovenseService,
     private readonly sessionSrv: LovenseSessionService,
     private readonly discordSrv: DiscordService,
-  ) {}
+  ) { }
 
   @Handler()
   async onSession(
@@ -111,15 +111,14 @@ export class SessionCommand {
           // Send invites to manually selected users
           if (users.length) {
             await interaction.update({
-              content: `Session is being created!\n\n:incoming_envelope: Invites will be sent to: ${
-                !(users.length == 1 && users.includes(interaction.user.id))
-                  ? `${users
-                      .filter((u) => u != interaction.user.id)
-                      .map((u) => `<@${u}>`)
-                      .join(', ')}
+              content: `Session is being created!\n\n:incoming_envelope: Invites will be sent to: ${!(users.length == 1 && users.includes(interaction.user.id))
+                ? `${users
+                  .filter((u) => u != interaction.user.id)
+                  .map((u) => `<@${u}>`)
+                  .join(', ')}
                 `
-                  : ''
-              }`,
+                : ''
+                }`,
               components: [],
             });
             //await interaction.deferReply({ ephemeral: true });
@@ -129,15 +128,14 @@ export class SessionCommand {
               interaction,
             );
             await interaction.editReply({
-              content: `Session \`#${sessionResult.session.id}\` created!\n\n${
-                !(users.length == 1 && users.includes(interaction.user.id))
-                  ? `:incoming_envelope: Session invites have been sent to: ${users
-                      .filter((u) => u != interaction.user.id)
-                      .map((u) => `<@${u}>`)
-                      .join(', ')}
+              content: `Session \`#${sessionResult.session.id}\` created!\n\n${!(users.length == 1 && users.includes(interaction.user.id))
+                ? `:incoming_envelope: Session invites have been sent to: ${users
+                  .filter((u) => u != interaction.user.id)
+                  .map((u) => `<@${u}>`)
+                  .join(', ')}
                 `
-                  : ''
-              }`,
+                : ''
+                }`,
               components: [],
             });
             buttonSelector.stop();

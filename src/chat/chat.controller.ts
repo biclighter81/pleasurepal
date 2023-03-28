@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Post, HttpException, Body } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Post, HttpException, Body, Query } from '@nestjs/common';
 import { AuthenticatedUser, AuthGuard } from 'nest-keycloak-connect';
 import { ConversationNotFoundError } from '../lib/errors/chat';
 import { FriendshipNotExists } from '../lib/errors/friend';
@@ -17,9 +17,10 @@ export class ChatController {
     async getDirectConversation(
         @AuthenticatedUser() user: JWTKeycloakUser,
         @Param('uid') uid: string,
+        @Query('offset') offset?: number,
     ) {
         try {
-            return await this.chatService.getDirectConversation(user.sub, uid);
+            return await this.chatService.getDirectConversation(user.sub, uid, offset);
         } catch (e) {
             if (e instanceof ConversationNotFoundError) {
                 throw new HttpException({
@@ -33,16 +34,6 @@ export class ChatController {
                 name: e.name,
             }, 500);
         }
-    }
-
-    @UseGuards(AuthGuard)
-    @Get('conversation/direct/:uid/:offset')
-    async getDirectConversationWithOffset(
-        @AuthenticatedUser() user: JWTKeycloakUser,
-        @Param('uid') uid: string,
-        @Param('offset') offset: number,
-    ) {
-        return this.chatService.getDirectConversation(user.sub, uid, offset);
     }
 
     @UseGuards(AuthGuard)
