@@ -58,7 +58,7 @@ export class ChatService {
                     id: conversations[0].conversationId,
                 }
             },
-            take: 10,
+            take: 100,
             skip: offset || 0,
             order: {
                 sendAt: 'DESC',
