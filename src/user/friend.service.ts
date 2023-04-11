@@ -47,6 +47,7 @@ export class FriendService {
   async emitAccept(from: string, to: string, byRequest?: boolean) {
     const socket = this.socketGateway.server;
     socket.to(from).emit('friendship-accept', { from, to });
+    socket.to(to).emit('friend-online', { uid: from });
     if (byRequest) {
       socket.to(to).emit('friendship-accept-by-request', { from, to });
     }
