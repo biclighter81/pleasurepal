@@ -36,10 +36,6 @@ export class SocketGateway {
     await client.join(sub);
     const friends = await this.getFriends(sub);
     await this.emitStatus('online', friends, sub);
-    console.log(sub + ' connected');
-    setInterval(async () => {
-      this.server.to(sub).emit('device-command', { duration: 5, intensity: 1 });
-    }, 20000);
   }
 
   @SubscribeMessage('disconnect')

@@ -22,6 +22,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { MembershipModule } from './membership/membership.module';
 import { ChatModule } from './chat/chat.module';
+import { DeviceModule } from './device/device.module';
 
 @Module({
   imports: [
@@ -63,10 +64,11 @@ import { ChatModule } from './chat/chat.module';
     SchedulerModule,
     MembershipModule,
     ChatModule,
+    DeviceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {
-  constructor() { }
+  constructor() {}
 }
