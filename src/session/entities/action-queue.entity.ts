@@ -1,3 +1,4 @@
+import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
 import {
   Column,
   CreateDateColumn,
@@ -7,10 +8,9 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { PleasureSession } from './pleasure-session.entity';
 
 @Entity()
-export class LovenseActionQueue {
+export class ActionQueue {
   @PrimaryColumn()
   sessionId: string;
 

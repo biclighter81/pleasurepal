@@ -11,7 +11,7 @@ import { buildLovenseQrCodeEmbed } from 'src/lib/interaction-helper';
 import { QRCodeResponse } from 'src/lib/interfaces/lovense';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
-import { User } from 'src/user/entities/user.entity';
+import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -19,8 +19,8 @@ export class DiscordService {
   constructor(
     @InjectDiscordClient()
     private readonly discordClient: Client,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectRepository(LovenseHeartbeat)
+    private readonly lovenseHeartbeatRepo: Repository<LovenseHeartbeat>,
   ) {}
 
   async sendMessage(discordUid: string, message: string) {
@@ -68,7 +68,7 @@ export class DiscordService {
           resolve(false);
         }
         //poll for heartbeat
-        let user = await this.userRepo.findOne({
+        let user = await this.lovenseHeartbeatRepo.findOne({
           where: { uid: uid },
         });
         if (

@@ -23,6 +23,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { MembershipModule } from './membership/membership.module';
 import { ChatModule } from './chat/chat.module';
 import { DeviceModule } from './device/device.module';
+import { SessionModule } from './session/session.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { DeviceModule } from './device/device.module';
     MembershipModule,
     ChatModule,
     DeviceModule,
+    SessionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

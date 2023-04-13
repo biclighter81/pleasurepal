@@ -10,17 +10,16 @@ import { DiscordService } from 'src/discord/discord.service';
 import { KeycloakUser } from 'src/lib/interfaces/keycloak';
 import { getDiscordUidByKCId, getKCUserByDiscordId } from 'src/lib/keycloak';
 import {
-  INVITED_NOT_LINKED,
   INVITED_NO_ACCOUNT,
   NEED_TO_REGISTER_PLEASUREPAL,
 } from 'src/lib/reply-messages';
 import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
-import { User } from 'src/user/entities/user.entity';
+import { ActionQueue } from 'src/session/entities/action-queue.entity';
+import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
+import { User_PleasureSession } from 'src/session/entities/user_plesure_session.join-entity';
 import { Repository } from 'typeorm';
 import { LovenseFunctionCommand } from './dto/lovense-command.dto';
-import { LovenseActionQueue } from './entities/lovense-action-queue.entity';
-import { PleasureSession } from './entities/pleasure-session.entity';
-import { User_PleasureSession } from './entities/user_plesure_session.join-entity';
+import { LovenseHeartbeat } from './entities/lovense-heartbeat.entity';
 import { LovenseControlSservice } from './lovense-control.service';
 import { LovenseService } from './lovense.service';
 
@@ -31,10 +30,10 @@ export class LovenseSessionService {
   constructor(
     @InjectRepository(PleasureSession)
     private readonly pleasureSessionRepo: Repository<PleasureSession>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-    @InjectRepository(LovenseActionQueue)
-    private readonly actionQueueRepo: Repository<LovenseActionQueue>,
+    @InjectRepository(LovenseHeartbeat)
+    private readonly lovenseHeartbeatrepo: Repository<LovenseHeartbeat>,
+    @InjectRepository(ActionQueue)
+    private readonly actionQueueRepo: Repository<ActionQueue>,
     @InjectRepository(User_PleasureSession)
     private readonly userPleasureSessionRepo: Repository<User_PleasureSession>,
     private readonly lovenseSrv: LovenseService,
@@ -94,7 +93,7 @@ export class LovenseSessionService {
   async validateDiscordSessionReq(interaction: CommandInteraction): Promise<
     | {
         kcUser: KeycloakUser;
-        user: User;
+        user: LovenseHeartbeat;
         session: PleasureSession;
       }
     | undefined
@@ -104,7 +103,7 @@ export class LovenseSessionService {
       await interaction.reply(NEED_TO_REGISTER_PLEASUREPAL);
       return undefined;
     }
-    const user = await this.lovenseSrv.getUser(kcUser.id);
+    const user = await this.lovenseSrv.getLastHeartbeat(kcUser.id);
     if (
       !user ||
       !user.lastHeartbeat ||
@@ -133,7 +132,7 @@ export class LovenseSessionService {
     };
   }
 
-  async getCommandQueue(sessionId: string): Promise<LovenseActionQueue[]> {
+  async getCommandQueue(sessionId: string): Promise<ActionQueue[]> {
     return await this.actionQueueRepo.find({
       where: {
         sessionId,
@@ -155,18 +154,18 @@ export class LovenseSessionService {
         active: false,
       },
     );
-    let users: User[] = [];
+    let users: LovenseHeartbeat[] = [];
     for (const uid of uids) {
       const kcUser = await getKCUserByDiscordId(uid);
       // Handle users that have not linked their discord accounts
       if (!kcUser) continue;
-      let user = await this.userRepo.findOne({
+      let user = await this.lovenseHeartbeatrepo.findOne({
         where: { uid: kcUser.id },
       });
       // Handle users that have not linked their lovense accounts
       if (!user) {
         // send message to user
-        user = await this.userRepo.save({
+        user = await this.lovenseHeartbeatrepo.save({
           uid: kcUser.id,
         });
       }
@@ -192,7 +191,7 @@ export class LovenseSessionService {
   async sendSessionCommand(
     sessionId: string,
     command: LovenseFunctionCommand,
-    user: User,
+    user: LovenseHeartbeat,
   ) {
     // Get session with all users which have accepted the invite
     const session = await this.pleasureSessionRepo.findOne({
@@ -275,7 +274,7 @@ export class LovenseSessionService {
         incompletedAccounts.push(user);
         continue;
       }
-      const lovenseUser = await this.userRepo.findOne({
+      const lovenseUser = await this.lovenseHeartbeatrepo.findOne({
         where: { uid: kcUser.id },
       });
       if (
@@ -307,14 +306,6 @@ export class LovenseSessionService {
         continue;
       }
       // Send invite message
-      await this.lovenseSrv.sendInviteMessage({
-        user,
-        initiator,
-        session,
-        invitedUsers,
-        lovenseUser,
-        initiatorInteraction,
-      });
     }
 
     //make incompletedAccounts distinct by there id

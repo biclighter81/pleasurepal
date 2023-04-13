@@ -139,7 +139,7 @@ export const SESSION_CREATION_COMPONENTS: ComponentsType = [
   },
 ];
 
-export const SESSION_INVIATION_COMPONENTS: ComponentsType = [
+export const SESSION_INVITATION_COMPONENTS: ComponentsType = [
   {
     type: ComponentType.ActionRow,
     components: [

@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { LovenseActionQueue } from './lovense-action-queue.entity';
+import { ActionQueue } from './action-queue.entity';
 import { User_PleasureSession } from './user_plesure_session.join-entity';
 
 @Entity()
@@ -39,6 +39,6 @@ export class PleasureSession {
   })
   user: User_PleasureSession[];
 
-  @OneToMany(() => LovenseActionQueue, (action) => action.session)
-  actionQueue: LovenseActionQueue[];
+  @OneToMany(() => ActionQueue, (action) => action.session)
+  actionQueue: ActionQueue[];
 }

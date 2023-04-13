@@ -4,9 +4,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DiscordService } from 'src/discord/discord.service';
 import { getDiscordUidByKCId } from 'src/lib/keycloak';
 import { LovenseFunctionCommand } from 'src/lovense/dto/lovense-command.dto';
-import { LovenseActionQueue } from 'src/lovense/entities/lovense-action-queue.entity';
-import { PleasureSession } from 'src/lovense/entities/pleasure-session.entity';
 import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
+import { ActionQueue } from 'src/session/entities/action-queue.entity';
+import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -14,15 +14,15 @@ export class SchedulerService {
   private readonly logger: Logger = new Logger(SchedulerService.name);
 
   constructor(
-    @InjectRepository(LovenseActionQueue)
-    private readonly actionQueueRepo: Repository<LovenseActionQueue>,
+    @InjectRepository(ActionQueue)
+    private readonly actionQueueRepo: Repository<ActionQueue>,
     @InjectRepository(PleasureSession)
     private readonly pleasureSessionRepo: Repository<PleasureSession>,
     private readonly lovenseControlSrv: LovenseControlSservice,
     private readonly discordSrv: DiscordService,
   ) {}
 
-  async getNextActions(): Promise<LovenseActionQueue[]> {
+  async getNextActions(): Promise<ActionQueue[]> {
     return this.actionQueueRepo.query(
       'select sub.* from (select *, row_number() over (partition by "sessionId") from lovense_action_queue laq where laq."startedAt" is null order by "sessionId", "index") "sub" where "sub".row_number = 1',
     );
@@ -31,7 +31,7 @@ export class SchedulerService {
   async getAction(
     sessionId: string,
     idx: number,
-  ): Promise<LovenseActionQueue | undefined> {
+  ): Promise<ActionQueue | undefined> {
     return this.actionQueueRepo.findOne({
       where: {
         sessionId: sessionId,

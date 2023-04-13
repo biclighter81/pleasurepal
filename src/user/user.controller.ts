@@ -5,18 +5,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  AuthenticatedUser,
-  AuthGuard,
-  Resource,
-  ResourceGuard,
-} from 'nest-keycloak-connect';
+import { AuthGuard } from 'nest-keycloak-connect';
 import { searchKCUser } from '../lib/keycloak';
-import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userSrv: UserService) {}
+  constructor() {}
 
   @UseGuards(AuthGuard)
   @Get('search')

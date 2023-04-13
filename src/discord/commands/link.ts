@@ -36,7 +36,7 @@ export class LinkCommand {
       return;
     }
 
-    const user = await this.lovenseSrv.getUser(kcUser.id, true);
+    const user = await this.lovenseSrv.getLastHeartbeat(kcUser.id);
     if (user) {
       const msg = await interaction.reply({
         content: LOVENSE_ACCOUNT_ALREADY_LINKED,
