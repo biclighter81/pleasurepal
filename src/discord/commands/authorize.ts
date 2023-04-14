@@ -41,6 +41,12 @@ export class AuthorizeCommand {
       });
       return;
     }
+    if (!session.user.find((u) => u.uid === user.id)?.hasControl) {
+      interaction.reply({
+        content: ':x: You do not have control over this session.',
+      });
+      return;
+    }
     const duser = await this.discordSessionSrv.getDiscordUsers(session.id);
     const msg = await interaction.reply({
       content: 'Select a user to authorize.',

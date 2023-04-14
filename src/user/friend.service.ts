@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getKCUserById } from 'src/lib/keycloak';
-import { IsNull, Not, Raw, Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import {
   FriendshipRequestAlreadyExists,
   FriendshipRequestBlocked,
