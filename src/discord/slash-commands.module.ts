@@ -2,7 +2,6 @@ import { DiscordModule as DiscordJSModule } from '@discord-nestjs/core';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LovenseToy } from 'src/lovense/entities/lovense-toy.entity';
-import { LovenseSessionService } from 'src/lovense/lovense-session.service';
 import { LovenseService } from 'src/lovense/lovense.service';
 import { LeaveCommand } from './commands/leave';
 import { LinkCommand } from './commands/link';
@@ -17,6 +16,8 @@ import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity'
 import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
 import { User_PleasureSession } from 'src/session/entities/user_plesure_session.join-entity';
 import { ActionQueue } from 'src/session/entities/action-queue.entity';
+import { SessionService } from 'src/session/session.service';
+import { DiscordSessionService } from 'src/session/discord-session.service';
 
 @Module({
   imports: [
@@ -38,9 +39,10 @@ import { ActionQueue } from 'src/session/entities/action-queue.entity';
     AuthorizeCommand,
     SessionInfoCommand,
     LovenseService,
-    LovenseSessionService,
     LovenseControlSservice,
     DiscordService,
+    SessionService,
+    DiscordSessionService,
   ],
 })
 export class SlashCommandsModule {}

@@ -1,13 +1,15 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
-import { CommandInteraction, ComponentType } from 'discord.js';
+import {
+  ButtonInteraction,
+  CacheType,
+  CommandInteraction,
+  ComponentType,
+} from 'discord.js';
 import { Injectable } from '@nestjs/common';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
-import { LovenseService } from 'src/lovense/lovense.service';
-import { NEED_TO_REGISTER_PLEASUREPAL } from 'src/lib/reply-messages';
 import { SESSION_CREATION_COMPONENTS } from 'src/lib/interaction-helper';
-import { LovenseSessionService } from 'src/lovense/lovense-session.service';
-import { LOVENSE_HEARTBEAT_INTERVAL } from 'src/lib/utils';
-import { DiscordService } from '../discord.service';
+import { SessionService } from 'src/session/session.service';
+import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
 
 @Command({
   name: 'session',
@@ -15,145 +17,138 @@ import { DiscordService } from '../discord.service';
 })
 @Injectable()
 export class SessionCommand {
-  constructor(
-    private readonly lovenseSrv: LovenseService,
-    private readonly sessionSrv: LovenseSessionService,
-    private readonly discordSrv: DiscordService,
-  ) {}
+  constructor(private readonly sessionSrv: SessionService) {}
 
   @Handler()
   async onSession(
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<void> {
-    const kcUser = await getKCUserByDiscordId(interaction.user.id);
-    if (!kcUser) {
-      await interaction.reply(NEED_TO_REGISTER_PLEASUREPAL);
+    const user = await getKCUserByDiscordId(interaction.user.id);
+    if (!user) {
+      interaction.reply({
+        content: ':x: No pleasurepal account',
+      });
       return;
     }
-    const user = await this.lovenseSrv.getLastHeartbeat(kcUser.id);
-    if (
-      !user ||
-      !user.lastHeartbeat ||
-      user.lastHeartbeat.getTime() < Date.now() - LOVENSE_HEARTBEAT_INTERVAL
-    ) {
-      const qr = await this.lovenseSrv.getLinkQrCode(
-        kcUser.id,
-        kcUser.username,
-      );
-      await this.discordSrv.pollLinkStatus(interaction, qr, kcUser.id);
-      return;
-    }
-    const session = await this.sessionSrv.getCurrentSession(kcUser.id);
+    const session = await this.sessionSrv.getCurrentSession(user.id);
     if (session) {
-      await interaction.reply({
-        content: `You are already in a session! To leave the session, use the \`/leave\` command.`,
-        ephemeral: true,
+      interaction.reply({
+        content:
+          ':x: You are already in a session! To leave the session, use the `/leave` command.',
       });
       return;
     }
 
-    // timeout in ms
-    const timeout = 300000;
     const msg = await interaction.reply({
       content: 'Configure your pleasurepal session',
       ephemeral: true,
       components: SESSION_CREATION_COMPONENTS,
     });
 
-    // Collect user select interactions
-    let users: string[] = [];
+    let uids: string[] = [];
     const userSelector = msg.createMessageComponentCollector({
       componentType: ComponentType.UserSelect,
-      time: timeout,
+      time: 300000,
     });
-    userSelector.on('collect', async (interaction) => {
-      users = interaction.values;
-      await interaction.deferUpdate();
+    userSelector.on('collect', async (i) => {
+      uids = i.values;
+      //TODO: implement logic to check if user has pleasurepal account and linked discord account
+      await i.deferUpdate();
     });
 
-    // Collect channel select interactions
     let channel: string;
     const channelSelector = msg.createMessageComponentCollector({
       componentType: ComponentType.ChannelSelect,
-      time: timeout,
+      time: 300000,
     });
-    channelSelector.on('collect', async (interaction) => {
-      channel = interaction.values[0];
-      await interaction.deferUpdate();
+    channelSelector.on('collect', async (i) => {
+      channel = i.values[0];
+      await i.deferUpdate();
     });
 
-    // Collect button interactions
     const buttonSelector = msg.createMessageComponentCollector({
       componentType: ComponentType.Button,
-      time: timeout,
+      time: 300000,
     });
-    buttonSelector.on('collect', async (interaction) => {
-      // Start session button
-      if (interaction.customId === 'startSession') {
-        if (!users.length && !channel) {
-          interaction.followUp({
-            content: 'You need to select at least one user or a channel',
-            ephemeral: true,
-          });
-        } else {
-          // Get all users from channel and send invites
-          if (channel) {
-          }
-          // Send invites to manually selected users
-          if (users.length) {
-            await interaction.update({
-              content: `Session is being created!\n\n:incoming_envelope: Invites will be sent to: ${
-                !(users.length == 1 && users.includes(interaction.user.id))
-                  ? `${users
-                      .filter((u) => u != interaction.user.id)
-                      .map((u) => `<@${u}>`)
-                      .join(', ')}
-                `
-                  : ''
-              }`,
-              components: [],
-            });
-            //await interaction.deferReply({ ephemeral: true });
-            const sessionResult = await this.sessionSrv.sendSessionInvites(
-              users,
-              interaction.user.id,
-              interaction,
-            );
-            await interaction.editReply({
-              content: `Session \`#${sessionResult.session.id}\` created!\n\n${
-                !(users.length == 1 && users.includes(interaction.user.id))
-                  ? `:incoming_envelope: Session invites have been sent to: ${users
-                      .filter((u) => u != interaction.user.id)
-                      .map((u) => `<@${u}>`)
-                      .join(', ')}
-                `
-                  : ''
-              }`,
-              components: [],
-            });
-            buttonSelector.stop();
-          }
-        }
+    buttonSelector.on('collect', async (i) => {
+      if (i.customId === 'startSession') {
+        await this.handleStartSession(interaction, i, uids, channel, user.id);
       }
-      // Cancel button
-      if (interaction.customId === 'cancelSession') {
-        interaction.update({
-          content: 'Session creation cancelled!',
-          components: [],
-        });
-        buttonSelector.stop();
-        return;
+      if (i.customId === 'cancelSession') {
+        await this.handleCancelSession(interaction);
       }
     });
+    buttonSelector.on('end', async () => {
+      interaction.editReply({
+        content: ':x: Session creation timed out!',
+      });
+    });
+  }
 
-    //Handle timeout
-    buttonSelector.on('end', async (i, reason) => {
-      if (reason === 'time') {
-        interaction.editReply({
-          content: ':x: Session creation timed out!',
+  async handleStartSession(
+    i: CommandInteraction<CacheType>,
+    cmdI: ButtonInteraction<CacheType>,
+    uids: string[],
+    cid: string,
+    initUid: string,
+  ) {
+    const noPleasurepalUids: string[] = [];
+    let pleasurepalUsers = await Promise.all(
+      uids.map(async (u) => {
+        const user = await getKCUserByDiscordId(u);
+        if (!user) {
+          noPleasurepalUids.push(u);
+        }
+        return user;
+      }),
+    );
+    pleasurepalUsers = pleasurepalUsers.filter((u) => u);
+    const users = {
+      discord: uids,
+      pleasurepal: pleasurepalUsers.map((u) => u.id),
+    };
+    if (!users.discord.length && !cid) {
+      cmdI.reply({
+        content: 'You need to select at least one user or a channel!',
+        ephemeral: true,
+      });
+    } else {
+      const session = await this.sessionSrv.create(initUid, users.pleasurepal);
+      //no pleasurepal account invites
+      await Promise.all(
+        noPleasurepalUids.map((uid) =>
+          this.handleInviteNoPleasurepal(uid, session),
+        ),
+      );
+      //pleasurepal account invites
+      await Promise.all(
+        users.pleasurepal.map((uid) => this.handleInvite(uid, session)),
+      );
+      if (cid) {
+        //TODO: implement channel invite handling
+      }
+      if (users.discord.length) {
+        await i.editReply({
+          content: `:white_check_mark: Session \`${session.id}\` has been created!`,
           components: [],
         });
       }
+    }
+  }
+
+  async handleCancelSession(i: CommandInteraction<CacheType>) {
+    i.editReply({
+      content: ':x: Session creation cancelled!',
+      components: [],
     });
+    return;
+  }
+
+  async handleInviteNoPleasurepal(duid: string, session: PleasureSession) {
+    console.log(`Invite no pleasurepal user ${duid} to session ${session.id}`);
+  }
+
+  async handleInvite(uid: string, session: PleasureSession) {
+    console.log(`Invite pleasurepal user ${uid} to session ${session.id}`);
   }
 }

@@ -2,15 +2,10 @@ import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
 import { CommandInteraction } from 'discord.js';
 import { SlashCommandPipe } from '@discord-nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { LovenseService } from 'src/lovense/lovense.service';
 import {} from 'src/lib/reply-messages';
-import {
-  PleasureActionOptions,
-  PleasureCommandParams,
-} from '../parameters/pleasure.param';
-import { capatializeFirstLetter } from 'src/lib/utils';
-import { LovenseSessionService } from 'src/lovense/lovense-session.service';
-import { DiscordService } from '../discord.service';
+import { PleasureCommandParams } from '../parameters/pleasure.param';
+import { SessionService } from 'src/session/session.service';
+import { getKCUserByDiscordId } from 'src/lib/keycloak';
 
 @Command({
   name: 'pleasure',
@@ -18,45 +13,38 @@ import { DiscordService } from '../discord.service';
 })
 @Injectable()
 export class PleasureCommand {
-  constructor(
-    private readonly lovenseSrv: LovenseService,
-    private readonly sessionSrv: LovenseSessionService,
-    private readonly discordSrv: DiscordService,
-  ) {}
+  constructor(private readonly sessionSrv: SessionService) {}
 
   @Handler()
   async onLink(
     @InteractionEvent(SlashCommandPipe) params: PleasureCommandParams,
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<void> {
-    const info = await this.sessionSrv.validateDiscordSessionReq(interaction);
-    if (!info) {
+    const user = await getKCUserByDiscordId(interaction.user.id);
+    if (!user) {
+      interaction.reply({
+        content: ':x: No pleasurepal account',
+      });
       return;
     }
-    //check for session rights
-    if (!info.session.user.find((c) => c.uid === info.user.uid)?.hasControl) {
+    const session = await this.sessionSrv.getCurrentSession(user.id);
+    if (!session) {
+      interaction.reply({
+        content: ':x: No active session',
+      });
+      return;
+    }
+    //check rights
+    if (!session.user.find((u) => u.uid === user.id)?.hasControl) {
       await interaction.reply({
         content: ':lock: You do not have control over the current session!',
         ephemeral: true,
       });
       return;
     }
-    const cmd = await this.sessionSrv.sendSessionCommand(
-      info.session.id,
-      {
-        action: capatializeFirstLetter(PleasureActionOptions[params.action]),
-        intensity: params.intensity,
-        loopPauseSec: params.looppausesec,
-        loopRunningSec: params.looprunningsec,
-        timeSec: params.duration,
-        stopPrevious: false,
-      },
-      info.user,
-    );
+    //TODO: implement new device command logic
     await interaction.reply({
-      content: `You have sent the command \`${JSON.stringify(
-        cmd,
-      )}\` to the session!`,
+      content: `You have sent the command \`\` to the session!`,
       ephemeral: true,
     });
   }

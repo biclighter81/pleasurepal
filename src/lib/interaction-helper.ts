@@ -1,4 +1,5 @@
 import {
+  APIActionRowComponent,
   BaseMessageOptions,
   ButtonInteraction,
   ButtonStyle,
@@ -8,8 +9,10 @@ import {
   ComponentType,
   EmbedBuilder,
   StringSelectMenuInteraction,
+  User,
   UserSelectMenuInteraction,
 } from 'discord.js';
+import { User_PleasureSession } from 'src/session/entities/user_plesure_session.join-entity';
 type ComponentsType = BaseMessageOptions['components'];
 type InteractionTimeoutType =
   | UserSelectMenuInteraction<CacheType>
@@ -158,3 +161,42 @@ export const SESSION_INVITATION_COMPONENTS: ComponentsType = [
     ],
   },
 ];
+
+export const AUTHORIZE_SESSION_USER_SELECT_COMPONENTS = (
+  users: User_PleasureSession[],
+  duser: { user: User; kcId: string },
+) => {
+  return [
+    {
+      type: ComponentType.StringSelect,
+      options: [
+        ...users.map((u) => ({
+          label: duser.user.username,
+          value: duser.user.id,
+        })),
+      ],
+      customId: 'users',
+      placeholder: 'Select users to authorize',
+      minValues: 1,
+      maxValues: users.length,
+    },
+  ] as any;
+};
+
+export const AUTHORIZE_SESSION_USER_BUTTON_COMPONENTS: any = {
+  type: ComponentType.ActionRow,
+  components: [
+    {
+      type: ComponentType.Button,
+      customId: 'authorize',
+      label: 'Authorize',
+      style: ButtonStyle.Primary,
+    },
+    {
+      type: ComponentType.Button,
+      customId: 'cancel',
+      label: 'Cancel',
+      style: ButtonStyle.Danger,
+    },
+  ],
+};

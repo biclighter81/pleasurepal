@@ -6,12 +6,15 @@ import {
 } from 'src/lib/errors/session';
 import { Repository } from 'typeorm';
 import { PleasureSession } from './entities/pleasure-session.entity';
+import { User_PleasureSession } from './entities/user_plesure_session.join-entity';
 
 @Injectable()
 export class SessionService {
   constructor(
     @InjectRepository(PleasureSession)
     private readonly sessionRepo: Repository<PleasureSession>,
+    @InjectRepository(User_PleasureSession)
+    private readonly userSessionRepo: Repository<User_PleasureSession>,
   ) {}
 
   async getCurrentSession(uid: string) {
@@ -58,12 +61,15 @@ export class SessionService {
       throw new UserNotInSessionError(
         `User ${uid} is not in session ${sessionId}!`,
       );
-    await this.sessionRepo.update(sessionId, {
-      user: [
-        ...session.user.filter((u) => u.uid != uid),
-        { uid: uid, active: false },
-      ],
-    });
+    await this.userSessionRepo.update(
+      {
+        pleasureSessionId: sessionId,
+        uid,
+      },
+      {
+        active: false,
+      },
+    );
     if (session.user.length > 1) {
       await this.authorizeMember(
         session.id,

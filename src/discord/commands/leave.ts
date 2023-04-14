@@ -1,12 +1,10 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
-import { CommandInteraction } from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 import { Injectable } from '@nestjs/common';
-import { LovenseService } from 'src/lovense/lovense.service';
-import {
-  interactionTimeout,
-  LEAVE_INTERACTION_CONFIRM_COMPONENTS,
-} from 'src/lib/interaction-helper';
-import { LovenseSessionService } from 'src/lovense/lovense-session.service';
+import { LEAVE_INTERACTION_CONFIRM_COMPONENTS } from 'src/lib/interaction-helper';
+import { getKCUserByDiscordId } from 'src/lib/keycloak';
+import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
+import { SessionService } from 'src/session/session.service';
 
 @Command({
   name: 'leave',
@@ -14,22 +12,28 @@ import { LovenseSessionService } from 'src/lovense/lovense-session.service';
 })
 @Injectable()
 export class LeaveCommand {
-  constructor(
-    private readonly lovenseSrv: LovenseService,
-    private readonly sessionSrv: LovenseSessionService,
-  ) {}
+  constructor(private readonly sessionSrv: SessionService) {}
 
   @Handler()
   async onLeave(
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<void> {
-    const info = await this.sessionSrv.validateDiscordSessionReq(interaction);
-    if (!info) {
+    const user = await getKCUserByDiscordId(interaction.user.id);
+    if (!user) {
+      interaction.reply({
+        content: ':x: No pleasurepal account',
+      });
       return;
     }
-
+    const session = await this.sessionSrv.getCurrentSession(user.id);
+    if (!session) {
+      interaction.reply({
+        content: ':x: No active session',
+      });
+      return;
+    }
     const msg = await interaction.reply({
-      content: `You are about to leave the current session \`#${info.session.id}\`. Are you sure?`,
+      content: `You are about to leave the current session \`#${session.id}\`. Are you sure?`,
       components: LEAVE_INTERACTION_CONFIRM_COMPONENTS,
       ephemeral: true,
     });
@@ -38,30 +42,41 @@ export class LeaveCommand {
     });
 
     // Collect button interactions
-    collector.on('collect', async (interaction) => {
-      if (interaction.customId === 'leave') {
-        await this.sessionSrv.leaveSession(info.kcUser.id, info.session);
-        await interaction.update({
-          content: `You have left the current session \`#${info.session.id}\`!`,
-          components: [],
-        });
-        collector.stop();
-      } else if (interaction.customId === 'cancel') {
-        await interaction.update({
-          content: `You have decided to stay in the current session \`#${info.session.id}\`!`,
-          components: [],
-        });
-        collector.stop();
+    collector.on('collect', async (i) => {
+      if (i.customId === 'leave') {
+        await this.handleLeave(user.id, interaction, session);
+      }
+      if (i.customId === 'cancel') {
+        await this.handleCancel(interaction, session);
       }
     });
+    collector.on('end', async () => {
+      await interaction.editReply({
+        content: `You have not responded in time. You are still in the current session \`${session.id}\`!`,
+        components: [],
+      });
+    });
+  }
 
-    // Handle timeout after 60 seconds
-    collector.on('end', async (collected, reason) =>
-      interactionTimeout(
-        interaction,
-        reason,
-        `You have not responded in time. You are still in the current session \`#${info.session.id}\`!`,
-      ),
-    );
+  async handleLeave(
+    uid: string,
+    i: CommandInteraction<CacheType>,
+    session: PleasureSession,
+  ) {
+    await this.sessionSrv.leave(session.id, uid);
+    await i.editReply({
+      content: `:white_check_mark: You have left the current session \`#${session.id}\`!`,
+      components: [],
+    });
+  }
+
+  async handleCancel(
+    i: CommandInteraction<CacheType>,
+    session: PleasureSession,
+  ) {
+    await i.editReply({
+      content: `You have decided to stay in the current session \`#${session.id}\`!`,
+      components: [],
+    });
   }
 }

@@ -23,13 +23,13 @@ export class DiscordSessionService {
       where: { id: sessionId },
       relations: ['user'],
     });
-    let users: User[] = [];
+    let users: { user: User; kcId: string }[] = [];
     for (const user of session.user) {
       const duid = await getDiscordUidByKCId(user.uid);
       if (!duid) continue;
       const duser = await this.discordSrv.getUser(duid);
       if (!duser) continue;
-      users.push(duser);
+      users.push({ user: duser, kcId: user.uid });
     }
     return users;
   }

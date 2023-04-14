@@ -1,8 +1,14 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
 import { Injectable } from '@nestjs/common';
-import { ButtonStyle, CommandInteraction, ComponentType } from 'discord.js';
-import { LovenseSessionService } from 'src/lovense/lovense-session.service';
-import { LovenseService } from 'src/lovense/lovense.service';
+import { CacheType, CommandInteraction, ComponentType, User } from 'discord.js';
+import {
+  AUTHORIZE_SESSION_USER_BUTTON_COMPONENTS,
+  AUTHORIZE_SESSION_USER_SELECT_COMPONENTS,
+} from 'src/lib/interaction-helper';
+import { getKCUserByDiscordId } from 'src/lib/keycloak';
+import { DiscordSessionService } from 'src/session/discord-session.service';
+import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
+import { SessionService } from 'src/session/session.service';
 import { DiscordService } from '../discord.service';
 
 @Command({
@@ -12,8 +18,8 @@ import { DiscordService } from '../discord.service';
 @Injectable()
 export class AuthorizeCommand {
   constructor(
-    private readonly lovenseSrv: LovenseService,
-    private readonly sessionSrv: LovenseSessionService,
+    private readonly sessionSrv: SessionService,
+    private readonly discordSessionSrv: DiscordSessionService,
     private readonly discordSrv: DiscordService,
   ) {}
 
@@ -21,55 +27,35 @@ export class AuthorizeCommand {
   async onAuthorize(
     @InteractionEvent() interaction: CommandInteraction,
   ): Promise<void> {
-    const info = await this.sessionSrv.validateDiscordSessionReq(interaction);
-    if (!info) {
+    const user = await getKCUserByDiscordId(interaction.user.id);
+    if (!user) {
+      interaction.reply({
+        content: ':x: No pleasurepal account',
+      });
       return;
     }
-    const sessionDiscordUsers = await this.sessionSrv.getSessionDiscordUsers(
-      info.session.id,
-    );
+    const session = await this.sessionSrv.getCurrentSession(user.id);
+    if (!session) {
+      interaction.reply({
+        content: ':x: No active session',
+      });
+      return;
+    }
+    const duser = await this.discordSessionSrv.getDiscordUsers(session.id);
     const msg = await interaction.reply({
       content: 'Select a user to authorize.',
       ephemeral: true,
       components: [
         {
           type: ComponentType.ActionRow,
-          components: [
-            {
-              type: ComponentType.StringSelect,
-              options: [
-                ...sessionDiscordUsers.map((cred) => ({
-                  label: cred.username,
-                  value: cred.kcId,
-                })),
-              ],
-              customId: 'users',
-              placeholder: 'Select users to authorize',
-              minValues: 1,
-              maxValues: sessionDiscordUsers.length,
-            },
-          ],
+          components: AUTHORIZE_SESSION_USER_SELECT_COMPONENTS(
+            session.user,
+            duser.find((u) => u.kcId === user.id),
+          ),
         },
-        {
-          type: ComponentType.ActionRow,
-          components: [
-            {
-              type: ComponentType.Button,
-              customId: 'authorize',
-              label: 'Authorize',
-              style: ButtonStyle.Primary,
-            },
-            {
-              type: ComponentType.Button,
-              customId: 'cancel',
-              label: 'Cancel',
-              style: ButtonStyle.Danger,
-            },
-          ],
-        },
+        AUTHORIZE_SESSION_USER_BUTTON_COMPONENTS,
       ],
     });
-    let users: string[] = [];
     const userCollector = msg.createMessageComponentCollector({
       time: 300000,
       componentType: ComponentType.StringSelect,
@@ -78,6 +64,7 @@ export class AuthorizeCommand {
       time: 300000,
       componentType: ComponentType.Button,
     });
+    let users: string[] = [];
     userCollector.on('collect', async (i) => {
       if (i.customId === 'users') {
         await i.deferUpdate();
@@ -86,39 +73,53 @@ export class AuthorizeCommand {
     });
     btnCollector.on('collect', async (i) => {
       if (i.customId === 'cancel') {
-        await interaction.editReply({
-          content: ':x: Authorization request canceled.',
-          components: [],
-        });
-        return;
+        return this.handleCancle(interaction);
       }
-      if (!users.length) {
-        interaction.followUp({
-          content: 'You need to select at least one user or a channel',
-          ephemeral: true,
-        });
-      } else {
-        for (const uid of users) {
-          const user = sessionDiscordUsers.find((u) => u.kcId === uid);
-          await this.sessionSrv.authorizeUser(info.session.id, user.kcId);
-          await this.discordSrv.sendMessage(
-            user.id,
-            ':unlock: You have been authorized to queue new commands in the current session!',
-          );
-        }
-        await interaction.editReply({
-          content: ':white_check_mark: Successfully authorized users!',
-          components: [],
-        });
+      if (i.customId === 'authorize') {
+        return this.handleAuthorize(users, interaction, session);
       }
     });
-    btnCollector.on('end', async (i, reason) => {
-      if (reason === 'time') {
-        await interaction.editReply({
-          content: ':x: Authorization request timed out!',
-          components: [],
-        });
-      }
+    btnCollector.on('end', async () => {
+      await interaction.editReply({
+        content: ':x: Authorization request timed out!',
+        components: [],
+      });
+    });
+  }
+
+  async handleCancle(i: CommandInteraction<CacheType>) {
+    await i.editReply({
+      content: ':x: Authorization request canceled.',
+      components: [],
+    });
+    return;
+  }
+
+  async handleAuthorize(
+    uids: string[],
+    i: CommandInteraction<CacheType>,
+    session: PleasureSession,
+  ) {
+    if (!uids.length) {
+      i.followUp({
+        content: 'You need to select at least one user!',
+        ephemeral: true,
+      });
+    } else {
+      const users = await Promise.all(
+        uids.map((uid) => this.discordSrv.getUser(uid)),
+      );
+      users.forEach(async (u) => await this.handleNotification(u, session));
+      await i.editReply({
+        content: ':white_check_mark: Successfully authorized users!',
+        components: [],
+      });
+    }
+  }
+
+  async handleNotification(u: User, session: PleasureSession) {
+    await u.send({
+      content: `:unlock: You have been authorized to queue new commands in session \`${session.id}\`!`,
     });
   }
 }

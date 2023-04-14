@@ -2,7 +2,6 @@ import { DiscordModule } from '@discord-nestjs/core';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LovenseToy } from './entities/lovense-toy.entity';
-import { LovenseSessionService } from './lovense-session.service';
 import { LovenseController } from './lovense.controller';
 import { LovenseService } from './lovense.service';
 import { DiscordService } from 'src/discord/discord.service';
@@ -24,12 +23,7 @@ import { ActionQueue } from 'src/session/entities/action-queue.entity';
     DiscordModule.forFeature(),
   ],
   controllers: [LovenseController],
-  providers: [
-    LovenseService,
-    LovenseSessionService,
-    LovenseControlSservice,
-    DiscordService,
-  ],
+  providers: [LovenseService, LovenseControlSservice, DiscordService],
   exports: [],
 })
 export class LovenseModule {}
