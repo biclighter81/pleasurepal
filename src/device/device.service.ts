@@ -9,7 +9,7 @@ export class DeviceService {
     uid: string,
     command: { duration: number; intensity: number },
   ) {
-    this.socketGateway.server.to(uid).emit('device-command', command);
+    this.socketGateway.server.to(uid).emit('device-vibrate', command);
     return command;
   }
 
