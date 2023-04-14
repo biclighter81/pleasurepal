@@ -18,8 +18,8 @@ export class LovenseControlSservice {
       kcId: string;
     } & LovenseFunctionCommand,
   ) {
-    const user = await this.lovenseSrv.getUser(command.kcId);
-    if (!user) throw new Error('No user found');
+    const lastHeartbeat = await this.lovenseSrv.getLastHeartbeat(command.kcId);
+    if (!lastHeartbeat) throw new Error('No user found');
     const res = await axios.post(
       `https://api.lovense-api.com/api/lan/v2/command`,
       {

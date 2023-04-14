@@ -1,4 +1,4 @@
-export class LovenseUser {
+export class LovenseCallback {
   uid: string;
   appVersion: string;
   toys: { [key: string]: Toy };

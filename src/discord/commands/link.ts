@@ -36,7 +36,7 @@ export class LinkCommand {
       return;
     }
 
-    const user = await this.lovenseSrv.getUser(kcUser.id, true);
+    const user = await this.lovenseSrv.getLastHeartbeat(kcUser.id);
     if (user) {
       const msg = await interaction.reply({
         content: LOVENSE_ACCOUNT_ALREADY_LINKED,
@@ -92,9 +92,10 @@ export class LinkCommand {
       });
 
       // Handle timeout after 60 seconds
-      cancelCollector.on('end', (i, reason) =>
-        interactionTimeout(interaction, reason, ':x: Relinking cancelled!'),
-      );
+      cancelCollector.on('end', (_, reason) => {
+        if (reason == 'time')
+          interactionTimeout(interaction, reason, ':x: Relinking cancelled!');
+      });
       return;
     } else {
       const qr = await this.lovenseSrv.getLinkQrCode(

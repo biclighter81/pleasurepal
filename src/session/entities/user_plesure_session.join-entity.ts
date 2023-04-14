@@ -1,4 +1,3 @@
-import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
@@ -15,10 +14,6 @@ export class User_PleasureSession {
   @PrimaryColumn()
   uid: string;
 
-  @ManyToOne(() => User, (user) => user.sessions)
-  @JoinColumn({ name: 'uid' })
-  user: User;
-
   @PrimaryColumn()
   pleasureSessionId: string;
 
@@ -26,10 +21,10 @@ export class User_PleasureSession {
   @JoinColumn({ name: 'pleasureSessionId' })
   pleasureSession: PleasureSession;
 
-  @Column({ default: false })
+  @Column({ nullable: true })
   inviteAccepted: boolean;
 
-  @Column({ default: true })
+  @Column({ default: false })
   active: boolean;
 
   @Column({ default: false })

@@ -1,5 +1,5 @@
-import { User } from 'src/user/entities/user.entity';
 import { Column, Entity, ManyToMany, PrimaryColumn } from 'typeorm';
+import { LovenseHeartbeat } from './lovense-heartbeat.entity';
 
 @Entity('lovense_toy')
 export class LovenseToy {
@@ -11,6 +11,6 @@ export class LovenseToy {
   name: string;
   @Column()
   status: number;
-  @ManyToMany(() => User, (user) => user.toys)
-  user: User[];
+  @ManyToMany(() => LovenseHeartbeat, (heartbeat) => heartbeat.toys)
+  heartbeat: LovenseHeartbeat[];
 }

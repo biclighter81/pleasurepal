@@ -1,13 +1,14 @@
 import { DataSource } from 'typeorm';
-import { LovenseActionQueue } from './lovense/entities/lovense-action-queue.entity';
-import { PleasureSession } from './lovense/entities/pleasure-session.entity';
 import { LovenseToy } from './lovense/entities/lovense-toy.entity';
-import { User } from './user/entities/user.entity';
-import { User_PleasureSession } from './lovense/entities/user_plesure_session.join-entity';
 import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
 import { Conversation } from './chat/entities/conversation.entity';
 import { ConversationParticipants } from './chat/entities/conversation-participants.entity';
 import { Message } from './chat/entities/message.entity';
+import { LovenseHeartbeat } from './lovense/entities/lovense-heartbeat.entity';
+import { PleasureSession } from './session/entities/pleasure-session.entity';
+import { User_PleasureSession } from './session/entities/user_plesure_session.join-entity';
+import { ActionQueue } from './session/entities/action-queue.entity';
+import { DeferredDiscordInvite } from './session/entities/deferred-discord-invite.entity';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -20,15 +21,16 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   entities: [
-    User,
+    LovenseHeartbeat,
     LovenseToy,
     PleasureSession,
     User_PleasureSession,
-    LovenseActionQueue,
+    ActionQueue,
     UserFriendshipRequest,
     Conversation,
     ConversationParticipants,
-    Message
+    Message,
+    DeferredDiscordInvite,
   ],
   schema: process.env.DB_SCHEMA,
   synchronize: true,
