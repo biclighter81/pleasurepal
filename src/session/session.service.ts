@@ -110,7 +110,10 @@ export class SessionService {
   async create(initiator: string, uids: string[]) {
     const session = await this.sessionRepo.save({
       initiatorId: initiator,
-      user: uids.map((uid) => ({ uid: uid })),
+      user: uids.map((uid) => ({
+        uid: uid,
+        hasControl: uid == initiator ? true : false,
+      })),
     });
     return session;
   }

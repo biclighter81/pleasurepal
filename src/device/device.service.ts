@@ -12,4 +12,52 @@ export class DeviceService {
     this.socketGateway.server.to(uid).emit('device-command', command);
     return command;
   }
+
+  async vibrate(uid: string, duration: number, intensity: number) {
+    this.socketGateway.server.to(uid).emit('device-vibrate', {
+      duration,
+      intensity,
+    });
+  }
+
+  async rotate(
+    uid: string,
+    duration: number,
+    speed: number,
+    clockwise?: boolean,
+  ) {
+    this.socketGateway.server.to(uid).emit('device-rotate', {
+      duration,
+      speed,
+      clockwise,
+    });
+  }
+
+  async linear(uid: string, duration: number, position: number) {
+    this.socketGateway.server.to(uid).emit('device-linear', {
+      duration,
+      position,
+    });
+  }
+
+  async scalar(
+    uid: string,
+    scalar: number,
+    actuatorType:
+      | 'Constrict'
+      | 'Inflate'
+      | 'Oscillate'
+      | 'Position'
+      | 'Rotate'
+      | 'Vibrate',
+  ) {
+    this.socketGateway.server.to(uid).emit('device-scalar', {
+      scalar,
+      actuatorType,
+    });
+  }
+
+  async stop(uid: string) {
+    this.socketGateway.server.to(uid).emit('device-stop');
+  }
 }

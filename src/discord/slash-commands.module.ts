@@ -12,7 +12,6 @@ import { AuthorizeCommand } from './commands/authorize';
 import { DiscordService } from './discord.service';
 import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
 import { SessionInfoCommand } from './commands/session-info';
-import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity';
 import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
 import { User_PleasureSession } from 'src/session/entities/user_plesure_session.join-entity';
 import { ActionQueue } from 'src/session/entities/action-queue.entity';
@@ -21,6 +20,8 @@ import { DiscordSessionService } from 'src/session/discord-session.service';
 import { DeferredDiscordInvite } from 'src/session/entities/deferred-discord-invite.entity';
 import { SocketGateway } from 'src/socket.gateway';
 import { UserFriendshipRequest } from 'src/user/entities/user-friendship-request.entity';
+import { DeviceService } from 'src/device/device.service';
+import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { UserFriendshipRequest } from 'src/user/entities/user-friendship-request
     SessionService,
     DiscordSessionService,
     SocketGateway,
+    DeviceService,
   ],
 })
 export class SlashCommandsModule {}

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import { DeviceService } from 'src/device/device.service';
 import { DiscordService } from 'src/discord/discord.service';
 import { getDiscordUidByKCId } from 'src/lib/keycloak';
 import { LovenseFunctionCommand } from 'src/lovense/dto/lovense-command.dto';

@@ -6,6 +6,7 @@ import {} from 'src/lib/reply-messages';
 import { PleasureCommandParams } from '../parameters/pleasure.param';
 import { SessionService } from 'src/session/session.service';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
+import { DeviceService } from 'src/device/device.service';
 
 @Command({
   name: 'pleasure',
@@ -13,7 +14,10 @@ import { getKCUserByDiscordId } from 'src/lib/keycloak';
 })
 @Injectable()
 export class PleasureCommand {
-  constructor(private readonly sessionSrv: SessionService) {}
+  constructor(
+    private readonly sessionSrv: SessionService,
+    private readonly deviceSrv: DeviceService,
+  ) {}
 
   @Handler()
   async onLink(
@@ -43,6 +47,9 @@ export class PleasureCommand {
       return;
     }
     //TODO: implement new device command logic
+    for (const user of session.user) {
+      await this.deviceSrv.vibrate(user.uid, params.duration, params.intensity);
+    }
     await interaction.reply({
       content: `You have sent the command \`\` to the session!`,
       ephemeral: true,
