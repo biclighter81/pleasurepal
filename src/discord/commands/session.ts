@@ -10,6 +10,8 @@ import { getKCUserByDiscordId } from 'src/lib/keycloak';
 import { SESSION_CREATION_COMPONENTS } from 'src/lib/interaction-helper';
 import { SessionService } from 'src/session/session.service';
 import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
+import { DiscordSessionService } from 'src/session/discord-session.service';
+import { KeycloakUser } from 'src/lib/interfaces/keycloak';
 
 @Command({
   name: 'session',
@@ -17,7 +19,10 @@ import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
 })
 @Injectable()
 export class SessionCommand {
-  constructor(private readonly sessionSrv: SessionService) {}
+  constructor(
+    private readonly sessionSrv: SessionService,
+    private readonly discordSessionSrv: DiscordSessionService,
+  ) {}
 
   @Handler()
   async onSession(
@@ -78,10 +83,11 @@ export class SessionCommand {
         await this.handleCancelSession(interaction);
       }
     });
-    buttonSelector.on('end', async () => {
-      interaction.editReply({
-        content: ':x: Session creation timed out!',
-      });
+    buttonSelector.on('end', async (_, reason) => {
+      if (reason == 'time')
+        interaction.editReply({
+          content: ':x: Session creation timed out!',
+        });
     });
   }
 
@@ -93,19 +99,20 @@ export class SessionCommand {
     initUid: string,
   ) {
     const noPleasurepalUids: string[] = [];
-    let pleasurepalUsers = await Promise.all(
-      uids.map(async (u) => {
-        const user = await getKCUserByDiscordId(u);
-        if (!user) {
-          noPleasurepalUids.push(u);
+    let pleasurepalUsers: (KeycloakUser & { duid: string })[] = [];
+    await Promise.all(
+      uids.map(async (uid) => {
+        const user = await getKCUserByDiscordId(uid);
+        if (user) {
+          pleasurepalUsers.push({ ...user, duid: uid });
+        } else {
+          noPleasurepalUids.push(uid);
         }
-        return user;
       }),
     );
-    pleasurepalUsers = pleasurepalUsers.filter((u) => u);
     const users = {
       discord: uids,
-      pleasurepal: pleasurepalUsers.map((u) => u.id),
+      pleasurepal: pleasurepalUsers,
     };
     if (!users.discord.length && !cid) {
       cmdI.reply({
@@ -113,7 +120,10 @@ export class SessionCommand {
         ephemeral: true,
       });
     } else {
-      const session = await this.sessionSrv.create(initUid, users.pleasurepal);
+      const session = await this.sessionSrv.create(
+        initUid,
+        users.pleasurepal.map((u) => u.id),
+      );
       //no pleasurepal account invites
       await Promise.all(
         noPleasurepalUids.map((uid) =>
@@ -122,7 +132,7 @@ export class SessionCommand {
       );
       //pleasurepal account invites
       await Promise.all(
-        users.pleasurepal.map((uid) => this.handleInvite(uid, session)),
+        users.pleasurepal.map((u) => this.handleInvite(u.id, initUid, session)),
       );
       if (cid) {
         //TODO: implement channel invite handling
@@ -146,9 +156,13 @@ export class SessionCommand {
 
   async handleInviteNoPleasurepal(duid: string, session: PleasureSession) {
     console.log(`Invite no pleasurepal user ${duid} to session ${session.id}`);
+    //TODO: implement logic to send signup / discord link request
+    await this.discordSessionSrv.handleDeferredInvite(session.id, duid);
   }
 
-  async handleInvite(uid: string, session: PleasureSession) {
+  async handleInvite(uid: string, inituid: string, session: PleasureSession) {
     console.log(`Invite pleasurepal user ${uid} to session ${session.id}`);
+    await this.discordSessionSrv.sendInvite(session.id, uid, inituid);
+    await this.sessionSrv.sendInvite(session.id, uid, inituid);
   }
 }

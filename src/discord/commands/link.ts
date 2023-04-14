@@ -92,9 +92,10 @@ export class LinkCommand {
       });
 
       // Handle timeout after 60 seconds
-      cancelCollector.on('end', (i, reason) =>
-        interactionTimeout(interaction, reason, ':x: Relinking cancelled!'),
-      );
+      cancelCollector.on('end', (_, reason) => {
+        if (reason == 'time')
+          interactionTimeout(interaction, reason, ':x: Relinking cancelled!');
+      });
       return;
     } else {
       const qr = await this.lovenseSrv.getLinkQrCode(

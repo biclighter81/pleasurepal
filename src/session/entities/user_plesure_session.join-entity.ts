@@ -21,10 +21,10 @@ export class User_PleasureSession {
   @JoinColumn({ name: 'pleasureSessionId' })
   pleasureSession: PleasureSession;
 
-  @Column({ default: false })
+  @Column({ nullable: true })
   inviteAccepted: boolean;
 
-  @Column({ default: true })
+  @Column({ default: false })
   active: boolean;
 
   @Column({ default: false })

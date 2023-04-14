@@ -24,7 +24,7 @@ export class SchedulerService {
 
   async getNextActions(): Promise<ActionQueue[]> {
     return this.actionQueueRepo.query(
-      'select sub.* from (select *, row_number() over (partition by "sessionId") from lovense_action_queue laq where laq."startedAt" is null order by "sessionId", "index") "sub" where "sub".row_number = 1',
+      'select sub.* from (select *, row_number() over (partition by "sessionId") from action_queue laq where laq."startedAt" is null order by "sessionId", "index") "sub" where "sub".row_number = 1',
     );
   }
 
@@ -89,7 +89,7 @@ export class SchedulerService {
         row_number() over(partition by ps.id) num
       from
         pleasure_session ps
-      left outer join lovense_action_queue laq on
+      left outer join action_queue laq on
         ps.id = laq."sessionId"
         where
         ps.active = true

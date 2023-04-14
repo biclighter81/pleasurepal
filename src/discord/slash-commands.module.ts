@@ -18,6 +18,9 @@ import { User_PleasureSession } from 'src/session/entities/user_plesure_session.
 import { ActionQueue } from 'src/session/entities/action-queue.entity';
 import { SessionService } from 'src/session/session.service';
 import { DiscordSessionService } from 'src/session/discord-session.service';
+import { DeferredDiscordInvite } from 'src/session/entities/deferred-discord-invite.entity';
+import { SocketGateway } from 'src/socket.gateway';
+import { UserFriendshipRequest } from 'src/user/entities/user-friendship-request.entity';
 
 @Module({
   imports: [
@@ -27,6 +30,8 @@ import { DiscordSessionService } from 'src/session/discord-session.service';
       PleasureSession,
       User_PleasureSession,
       ActionQueue,
+      DeferredDiscordInvite,
+      UserFriendshipRequest,
     ]),
     DiscordJSModule.forFeature(),
   ],
@@ -43,6 +48,7 @@ import { DiscordSessionService } from 'src/session/discord-session.service';
     DiscordService,
     SessionService,
     DiscordSessionService,
+    SocketGateway,
   ],
 })
 export class SlashCommandsModule {}

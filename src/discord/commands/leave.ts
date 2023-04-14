@@ -50,11 +50,12 @@ export class LeaveCommand {
         await this.handleCancel(interaction, session);
       }
     });
-    collector.on('end', async () => {
-      await interaction.editReply({
-        content: `You have not responded in time. You are still in the current session \`${session.id}\`!`,
-        components: [],
-      });
+    collector.on('end', async (_, reason) => {
+      if (reason == 'time')
+        await interaction.editReply({
+          content: `You have not responded in time. You are still in the current session \`${session.id}\`!`,
+          components: [],
+        });
     });
   }
 

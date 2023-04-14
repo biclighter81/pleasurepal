@@ -79,11 +79,12 @@ export class AuthorizeCommand {
         return this.handleAuthorize(users, interaction, session);
       }
     });
-    btnCollector.on('end', async () => {
-      await interaction.editReply({
-        content: ':x: Authorization request timed out!',
-        components: [],
-      });
+    btnCollector.on('end', async (_, reason) => {
+      if (reason == 'time')
+        await interaction.editReply({
+          content: ':x: Authorization request timed out!',
+          components: [],
+        });
     });
   }
 
