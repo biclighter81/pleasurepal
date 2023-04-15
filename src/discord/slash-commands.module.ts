@@ -22,6 +22,10 @@ import { SocketGateway } from 'src/socket.gateway';
 import { UserFriendshipRequest } from 'src/user/entities/user-friendship-request.entity';
 import { DeviceService } from 'src/device/device.service';
 import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity';
+import { ChatService } from 'src/chat/chat.service';
+import { FriendService } from 'src/user/friend.service';
+import { Conversation } from 'src/chat/entities/conversation.entity';
+import { Message } from 'src/chat/entities/message.entity';
 
 @Module({
   imports: [
@@ -33,6 +37,8 @@ import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity'
       ActionQueue,
       DeferredDiscordInvite,
       UserFriendshipRequest,
+      Conversation,
+      Message,
     ]),
     DiscordJSModule.forFeature(),
   ],
@@ -51,6 +57,8 @@ import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity'
     DiscordSessionService,
     SocketGateway,
     DeviceService,
+    ChatService,
+    FriendService,
   ],
 })
 export class SlashCommandsModule {}

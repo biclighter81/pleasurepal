@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ChatService } from 'src/chat/chat.service';
 import { NoSessionFoundError } from 'src/lib/errors/session';
 import { SocketGateway } from 'src/socket.gateway';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { PleasureSession } from './entities/pleasure-session.entity';
 import { User_PleasureSession } from './entities/user_plesure_session.join-entity';
 
@@ -14,11 +15,32 @@ export class SessionService {
     @InjectRepository(User_PleasureSession)
     private readonly userSessionRepo: Repository<User_PleasureSession>,
     private readonly socketGateway: SocketGateway,
+    private readonly chatSrv: ChatService,
   ) {}
 
   async getCurrentSession(uid: string) {
     return this.sessionRepo.findOne({
       where: { user: { uid: uid, active: true } },
+      relations: ['user'],
+    });
+  }
+
+  async getSessions(uid: string, offset?: number) {
+    return this.sessionRepo.find({
+      where: { user: { uid: uid } },
+      skip: offset,
+      take: 10,
+      relations: ['user'],
+    });
+  }
+
+  async searchSessions(uid: string, q: string, offset?: number) {
+    const searchResult = (await this.sessionRepo.query(
+      `select id from pleasure_session ps inner join user_pleasure_session ups on ps.id = ups."pleasureSessionId" where ups."uid"::text = $1 and (ps."name" ilike $2 or ups.uid::text ilike $2 or ps.id::text ilike $2)`,
+      [uid, `%${q}%`],
+    )) as { id: string }[];
+    return this.sessionRepo.find({
+      where: { id: In(searchResult.map((r) => r.id)) },
       relations: ['user'],
     });
   }
@@ -115,6 +137,7 @@ export class SessionService {
         hasControl: uid == initiator ? true : false,
       })),
     });
+    await this.chatSrv.createGroupConversation(uids, true, session.id);
     return session;
   }
 

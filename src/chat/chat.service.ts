@@ -11,18 +11,22 @@ import { SocketGateway } from '../socket.gateway';
 
 @Injectable()
 export class ChatService {
+  constructor(
+    private readonly friendSrv: FriendService,
+    @InjectRepository(Conversation)
+    private readonly conversationRepo: Repository<Conversation>,
+    @InjectRepository(Message)
+    private readonly messageRepo: Repository<Message>,
+    private readonly socketGateway: SocketGateway,
+  ) {}
 
-    constructor(
-        private readonly friendSrv: FriendService,
-        @InjectRepository(Conversation)
-        private readonly conversationRepo: Repository<Conversation>,
-        @InjectRepository(Message)
-        private readonly messageRepo: Repository<Message>,
-        private readonly socketGateway: SocketGateway,
-    ) { }
-
-    async getDirectConversation(requesterUid: string, uid: string, offset?: number) {
-        const conversations = (await this.conversationRepo.query(`
+  async getDirectConversation(
+    requesterUid: string,
+    uid: string,
+    offset?: number,
+  ) {
+    const conversations = (await this.conversationRepo.query(
+      `
             select
                 cp1."conversationId"
             from
@@ -42,95 +46,121 @@ export class ChatService {
                     "participantId" = $1
             )
             limit 1
-        `, [requesterUid, uid])) as { conversationId: string }[]
-        if (!conversations.length) {
-            throw new ConversationNotFoundError('Conversation not found!');
-        }
-        const conversation = await this.conversationRepo.findOne({
-            where: {
-                id: conversations[0].conversationId,
-            },
-            relations: ['participants']
-        })
-        const messages = await this.messageRepo.find({
-            where: {
-                conversation: {
-                    id: conversations[0].conversationId,
-                }
-            },
-            take: 100,
-            skip: offset || 0,
-            order: {
-                sendAt: 'DESC',
-            }
-        })
-        return {
-            ...conversation,
-            messages,
-        };
+        `,
+      [requesterUid, uid],
+    )) as { conversationId: string }[];
+    if (!conversations.length) {
+      throw new ConversationNotFoundError('Conversation not found!');
     }
+    const conversation = await this.conversationRepo.findOne({
+      where: {
+        id: conversations[0].conversationId,
+      },
+      relations: ['participants'],
+    });
+    const messages = await this.messageRepo.find({
+      where: {
+        conversation: {
+          id: conversations[0].conversationId,
+        },
+      },
+      take: 100,
+      skip: offset || 0,
+      order: {
+        sendAt: 'DESC',
+      },
+    });
+    return {
+      ...conversation,
+      messages,
+    };
+  }
 
-    async createDirectConversation(requesterUid: string, uid: string) {
-        const friendRequest = await this.friendSrv.getFriend(requesterUid, uid);
-        if (!friendRequest) {
-            throw new FriendshipNotExists('Friendship not exists!');
-        }
-        const conversationId = crypto.randomUUID();
-        const conversation = await this.conversationRepo.save({
-            id: conversationId,
-            participants: [
-                {
-                    conversationId,
-                    participantId: requesterUid,
-                },
-                {
-                    conversationId,
-                    participantId: uid,
-                }
-            ]
-        });
-        return {
-            ...conversation,
-            messages: [],
-        };
+  async createDirectConversation(requesterUid: string, uid: string) {
+    const friendRequest = await this.friendSrv.getFriend(requesterUid, uid);
+    if (!friendRequest) {
+      throw new FriendshipNotExists('Friendship not exists!');
     }
+    const conversationId = crypto.randomUUID();
+    const conversation = await this.conversationRepo.save({
+      id: conversationId,
+      participants: [
+        {
+          conversationId,
+          participantId: requesterUid,
+        },
+        {
+          conversationId,
+          participantId: uid,
+        },
+      ],
+    });
+    return {
+      ...conversation,
+      messages: [],
+    };
+  }
 
-    async sendMessage(requesterUid: string, conversationId: string, message: string) {
-        const conversation = await this.conversationRepo.findOne({
-            where: {
-                id: conversationId,
-                participants: [
-                    {
-                        participantId: requesterUid,
-                    }
-                ],
-            },
-            relations: ['participants']
-        })
-        if (!conversation) {
-            throw new ConversationNotFoundError('Conversation not found!');
-        }
-        const messageEntity = await this.messageRepo.save({
-            conversation: {
-                id: conversationId,
-            },
-            content: message,
-            sender: requesterUid
-        });
-        const socket = this.socketGateway.server;
-        const fullConversation = await this.conversationRepo.findOne({
-            where: {
-                id: conversationId,
-            },
-            relations: ['participants']
-        })
-        fullConversation.participants.forEach(participant => {
-            if (participant.participantId !== requesterUid) {
-                console.log(participant.participantId)
-                socket.to(participant.participantId).emit('message', messageEntity);
-            }
-        })
-        return messageEntity;
+  async createGroupConversation(
+    uids: string[],
+    isSession?: boolean,
+    name?: string,
+  ) {
+    const conversationId = crypto.randomUUID();
+    const conversation = await this.conversationRepo.save({
+      id: conversationId,
+      name,
+      type: 'group',
+      isSessionConversation: isSession || false,
+      participant: [
+        uids.map((uid) => ({
+          conversationId,
+          participantId: uid,
+        })),
+      ],
+    });
+    return conversation;
+  }
+
+  async sendMessage(
+    requesterUid: string,
+    conversationId: string,
+    message: string,
+  ) {
+    const conversation = await this.conversationRepo.findOne({
+      where: {
+        id: conversationId,
+        participants: [
+          {
+            participantId: requesterUid,
+          },
+        ],
+      },
+      relations: ['participants'],
+    });
+    if (!conversation) {
+      throw new ConversationNotFoundError('Conversation not found!');
     }
-
+    const messageEntity = await this.messageRepo.save({
+      conversation: {
+        id: conversationId,
+      },
+      content: message,
+      sender: requesterUid,
+    });
+    const socket = this.socketGateway.server;
+    const fullConversation = await this.conversationRepo.findOne({
+      where: {
+        id: conversationId,
+      },
+      relations: ['participants'],
+    });
+    fullConversation.participants.forEach((participant) => {
+      if (participant.participantId !== requesterUid) {
+        console.log(participant.participantId);
+        socket.to(participant.participantId).emit('message', messageEntity);
+      }
+    });
+    return messageEntity;
+  }
 }

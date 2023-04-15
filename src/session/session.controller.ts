@@ -5,6 +5,7 @@ import {
   HttpException,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticatedUser, AuthGuard } from 'nest-keycloak-connect';
@@ -70,5 +71,20 @@ export class SessionController {
       console.log(e);
       throw new HttpException('Error accepting invite!', 500);
     }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('current')
+  async getCurrentSession(@AuthenticatedUser() user: JWTKeycloakUser) {}
+
+  @Get('/')
+  @UseGuards(AuthGuard)
+  async getSessions(
+    @AuthenticatedUser() user: JWTKeycloakUser,
+    @Query() query: any,
+  ) {
+    const { offset = 0, q } = query;
+    if (q) return this.sessionSrv.searchSessions(user.sub, q, offset);
+    return this.sessionSrv.getSessions(user.sub, offset);
   }
 }

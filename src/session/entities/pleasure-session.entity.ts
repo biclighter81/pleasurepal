@@ -18,6 +18,9 @@ export class PleasureSession {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ nullable: true })
+  name: string;
+
   @Column()
   initiatorId: string;
 

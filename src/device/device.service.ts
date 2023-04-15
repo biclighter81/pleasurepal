@@ -43,6 +43,7 @@ export class DeviceService {
   async scalar(
     uid: string,
     scalar: number,
+    duration: number,
     actuatorType:
       | 'Constrict'
       | 'Inflate'
@@ -54,6 +55,7 @@ export class DeviceService {
     this.socketGateway.server.to(uid).emit('device-scalar', {
       scalar,
       actuatorType,
+      duration,
     });
   }
 

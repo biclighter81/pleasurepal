@@ -12,6 +12,10 @@ import { User_PleasureSession } from './entities/user_plesure_session.join-entit
 import { SessionService } from './session.service';
 import { SessionController } from './session.controller';
 import { KeycloakConnectModule } from 'nest-keycloak-connect';
+import { ChatService } from 'src/chat/chat.service';
+import { FriendService } from 'src/user/friend.service';
+import { Conversation } from 'src/chat/entities/conversation.entity';
+import { Message } from 'src/chat/entities/message.entity';
 
 @Module({
   imports: [
@@ -21,6 +25,8 @@ import { KeycloakConnectModule } from 'nest-keycloak-connect';
       LovenseHeartbeat,
       DeferredDiscordInvite,
       UserFriendshipRequest,
+      Conversation,
+      Message,
     ]),
     KeycloakConnectModule.register({
       authServerUrl: process.env.KEYCLOAK_URL,
@@ -35,6 +41,8 @@ import { KeycloakConnectModule } from 'nest-keycloak-connect';
     DiscordSessionService,
     DiscordService,
     SocketGateway,
+    ChatService,
+    FriendService,
   ],
   controllers: [SessionController],
 })
