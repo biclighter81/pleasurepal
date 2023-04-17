@@ -163,22 +163,21 @@ export const SESSION_INVITATION_COMPONENTS: ComponentsType = [
 ];
 
 export const AUTHORIZE_SESSION_USER_SELECT_COMPONENTS = (
-  users: User_PleasureSession[],
-  duser: { user: User; kcId: string },
+  duser: { user: User; kcId: string }[],
 ) => {
   return [
     {
       type: ComponentType.StringSelect,
       options: [
-        ...users.map((u) => ({
-          label: duser.user.username,
-          value: duser.user.id,
+        ...duser.map((u) => ({
+          label: u.user.username,
+          value: u.user.id,
         })),
       ],
       customId: 'users',
       placeholder: 'Select users to authorize',
       minValues: 1,
-      maxValues: users.length,
+      maxValues: duser.length,
     },
   ] as any;
 };

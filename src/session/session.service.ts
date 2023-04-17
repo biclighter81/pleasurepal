@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChatService } from 'src/chat/chat.service';
 import { NoSessionFoundError } from 'src/lib/errors/session';
+import { generateName } from 'src/lib/name-generator';
 import { SocketGateway } from 'src/socket.gateway';
 import { In, IsNull, Repository } from 'typeorm';
 import { PleasureSession } from './entities/pleasure-session.entity';
@@ -19,10 +20,17 @@ export class SessionService {
   ) {}
 
   async getCurrentSession(uid: string) {
-    return this.sessionRepo.findOne({
+    const session = await this.sessionRepo.findOne({
       where: { user: { uid: uid, active: true } },
       relations: ['user'],
     });
+    if (!session) {
+      return null;
+    }
+    const users = await this.userSessionRepo.find({
+      where: { pleasureSessionId: session.id },
+    });
+    return { ...session, user: users };
   }
 
   async getSessions(uid: string, offset?: number) {
@@ -46,13 +54,19 @@ export class SessionService {
   }
 
   async authorizeMember(sessionId: string, uid: string) {
-    const session = await this.sessionRepo.findOne({
+    await this.sessionRepo.findOne({
       where: { id: sessionId },
       relations: ['user'],
     });
-    await this.sessionRepo.update(sessionId, {
-      user: [...session.user, { uid: uid, hasControl: true }],
-    });
+    await this.userSessionRepo.update(
+      {
+        pleasureSessionId: sessionId,
+        uid,
+      },
+      {
+        hasControl: true,
+      },
+    );
   }
 
   async sendInvite(sessionId: string, uid: string, initiatorUid: string) {
@@ -129,9 +143,11 @@ export class SessionService {
     }));
   }
 
-  async create(initiator: string, uids: string[]) {
+  async create(initiator: string, uids: string[], name?: string) {
+    if (!name) name = generateName();
     const session = await this.sessionRepo.save({
       initiatorId: initiator,
+      name,
       user: uids.map((uid) => ({
         uid: uid,
         hasControl: uid == initiator ? true : false,

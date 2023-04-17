@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -77,8 +78,8 @@ export class SessionController {
   @Get('current')
   async getCurrentSession(@AuthenticatedUser() user: JWTKeycloakUser) {}
 
-  @Get('/')
   @UseGuards(AuthGuard)
+  @Get('/')
   async getSessions(
     @AuthenticatedUser() user: JWTKeycloakUser,
     @Query() query: any,
@@ -86,5 +87,29 @@ export class SessionController {
     const { offset = 0, q } = query;
     if (q) return this.sessionSrv.searchSessions(user.sub, q, offset);
     return this.sessionSrv.getSessions(user.sub, offset);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/')
+  async createSession(
+    @AuthenticatedUser() user: JWTKeycloakUser,
+    @Body() body: any,
+  ) {
+    const uids: string[] = body.uids;
+    const name = body.name;
+    try {
+      if (!uids || !uids.length)
+        throw new HttpException('No uids provided!', 400);
+      const session = await this.sessionSrv.create(user.sub, uids, name);
+      await Promise.all(
+        uids.map((uid) =>
+          this.sessionSrv.sendInvite(session.id, uid, user.sub),
+        ),
+      );
+      return session;
+    } catch (e) {
+      console.log(e);
+      throw new HttpException('Error creating session!', 500);
+    }
   }
 }

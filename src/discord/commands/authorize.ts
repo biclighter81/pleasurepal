@@ -54,10 +54,7 @@ export class AuthorizeCommand {
       components: [
         {
           type: ComponentType.ActionRow,
-          components: AUTHORIZE_SESSION_USER_SELECT_COMPONENTS(
-            session.user,
-            duser.find((u) => u.kcId === user.id),
-          ),
+          components: AUTHORIZE_SESSION_USER_SELECT_COMPONENTS(duser),
         },
         AUTHORIZE_SESSION_USER_BUTTON_COMPONENTS,
       ],
@@ -117,6 +114,9 @@ export class AuthorizeCommand {
         uids.map((uid) => this.discordSrv.getUser(uid)),
       );
       users.forEach(async (u) => await this.handleNotification(u, session));
+      uids.forEach(
+        async (uid) => await this.sessionSrv.authorizeMember(session.id, uid),
+      );
       await i.editReply({
         content: ':white_check_mark: Successfully authorized users!',
         components: [],

@@ -16,7 +16,7 @@ export class DeviceService {
   async vibrate(uid: string, duration: number, intensity: number) {
     this.socketGateway.server.to(uid).emit('device-vibrate', {
       duration,
-      intensity,
+      intensity: intensity / 100 || 1,
     });
   }
 

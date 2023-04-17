@@ -57,6 +57,22 @@ export class SocketGateway {
     });
   }
 
+  @SubscribeMessage('device-added')
+  async handleDeviceAdded(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: any,
+  ) {
+    debugger;
+  }
+
+  @SubscribeMessage('device-removed')
+  async handleDeviceRemoved(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: any,
+  ) {
+    debugger;
+  }
+
   async emitStatus(
     status: 'online' | 'offline',
     friends: UserFriendshipRequest[],
