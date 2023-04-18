@@ -18,7 +18,6 @@ import { ActionQueue } from 'src/session/entities/action-queue.entity';
 import { SessionService } from 'src/session/session.service';
 import { DiscordSessionService } from 'src/session/discord-session.service';
 import { DeferredDiscordInvite } from 'src/session/entities/deferred-discord-invite.entity';
-import { SocketGateway } from 'src/socket.gateway';
 import { UserFriendshipRequest } from 'src/user/entities/user-friendship-request.entity';
 import { DeviceService } from 'src/device/device.service';
 import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity';
@@ -26,6 +25,8 @@ import { ChatService } from 'src/chat/chat.service';
 import { FriendService } from 'src/user/friend.service';
 import { Conversation } from 'src/chat/entities/conversation.entity';
 import { Message } from 'src/chat/entities/message.entity';
+import { Device } from 'src/device/entities/device.entity';
+import { SocketGateway } from 'src/socket.gateway';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { Message } from 'src/chat/entities/message.entity';
       UserFriendshipRequest,
       Conversation,
       Message,
+      Device,
     ]),
     DiscordJSModule.forFeature(),
   ],
@@ -55,9 +57,9 @@ import { Message } from 'src/chat/entities/message.entity';
     DiscordService,
     SessionService,
     DiscordSessionService,
-    SocketGateway,
     DeviceService,
     ChatService,
+    SocketGateway,
     FriendService,
   ],
 })

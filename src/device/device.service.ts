@@ -1,9 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { SocketGateway } from 'src/socket.gateway';
+import { Repository } from 'typeorm';
+import { Device } from './entities/device.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DeviceInfo } from 'src/lib/interfaces/device';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class DeviceService {
-  constructor(private readonly socketGateway: SocketGateway) {}
+  constructor(
+    private readonly socketGateway: SocketGateway,
+    @InjectRepository(Device) private readonly deviceRepo: Repository<Device>,
+  ) {}
 
   async selfCommand(
     uid: string,
@@ -61,5 +69,24 @@ export class DeviceService {
 
   async stop(uid: string) {
     this.socketGateway.server.to(uid).emit('device-stop');
+  }
+
+  async onConnect(uid: string, info: DeviceInfo) {
+    const hash = createHash('md5')
+      .update(info.name + uid)
+      .digest('hex');
+    await this.deviceRepo.save({
+      hash: hash,
+      uid,
+      deviceInfo: JSON.stringify(info),
+      name: info.name,
+    });
+  }
+
+  async onRemove(uid: string, info: DeviceInfo) {
+    const hash = createHash('md5')
+      .update(info.name + uid)
+      .digest('hex');
+    await this.deviceRepo.delete({ hash });
   }
 }

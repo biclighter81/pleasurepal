@@ -24,6 +24,7 @@ import { MembershipModule } from './membership/membership.module';
 import { ChatModule } from './chat/chat.module';
 import { DeviceModule } from './device/device.module';
 import { SessionModule } from './session/session.module';
+import { SocketGateway } from './socket.gateway';
 
 @Module({
   imports: [

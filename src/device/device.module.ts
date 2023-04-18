@@ -5,10 +5,11 @@ import { SocketGateway } from 'src/socket.gateway';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserFriendshipRequest } from 'src/user/entities/user-friendship-request.entity';
 import { KeycloakConnectModule } from 'nest-keycloak-connect';
+import { Device } from './entities/device.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserFriendshipRequest]),
+    TypeOrmModule.forFeature([UserFriendshipRequest, Device]),
     KeycloakConnectModule.register({
       authServerUrl: process.env.KEYCLOAK_URL,
       realm: process.env.KEYCLOAK_REALM,
