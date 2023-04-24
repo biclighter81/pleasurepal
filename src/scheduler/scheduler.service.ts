@@ -5,7 +5,7 @@ import { DeviceService } from 'src/device/device.service';
 import { DiscordService } from 'src/discord/discord.service';
 import { getDiscordUidByKCId } from 'src/lib/keycloak';
 import { LovenseFunctionCommand } from 'src/lovense/dto/lovense-command.dto';
-import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
+import { LovenseControlService } from 'src/lovense/lovense-control.service';
 import { ActionQueue } from 'src/session/entities/action-queue.entity';
 import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
 import { Repository } from 'typeorm';
@@ -19,7 +19,7 @@ export class SchedulerService {
     private readonly actionQueueRepo: Repository<ActionQueue>,
     @InjectRepository(PleasureSession)
     private readonly pleasureSessionRepo: Repository<PleasureSession>,
-    private readonly lovenseControlSrv: LovenseControlSservice,
+    private readonly lovenseControlSrv: LovenseControlService,
     private readonly discordSrv: DiscordService,
   ) {}
 

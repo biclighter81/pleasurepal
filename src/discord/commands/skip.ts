@@ -1,7 +1,7 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
 import { CommandInteraction } from 'discord.js';
 import { Injectable } from '@nestjs/common';
-import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
+import { LovenseControlService } from 'src/lovense/lovense-control.service';
 import { SessionService } from 'src/session/session.service';
 import { getKCUserByDiscordId } from 'src/lib/keycloak';
 
@@ -13,7 +13,7 @@ import { getKCUserByDiscordId } from 'src/lib/keycloak';
 export class SkipCommand {
   constructor(
     private readonly sessionSrv: SessionService,
-    private readonly lovenseControlSrv: LovenseControlSservice,
+    private readonly lovenseControlSrv: LovenseControlService,
   ) {}
 
   @Handler()

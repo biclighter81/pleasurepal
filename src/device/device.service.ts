@@ -1,23 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { SocketGateway } from 'src/socket.gateway';
 
 @Injectable()
 export class DeviceService {
-  constructor(private readonly socketGateway: SocketGateway) {}
+  constructor() {}
 
   async selfCommand(
     uid: string,
     command: { duration: number; intensity: number },
   ) {
-    this.socketGateway.server.to(uid).emit('device-vibrate', command);
+    //this.socketGateway.server.to(uid).emit('device-vibrate', command);
     return command;
   }
 
   async vibrate(uid: string, duration: number, intensity: number) {
-    this.socketGateway.server.to(uid).emit('device-vibrate', {
+    /*this.socketGateway.server.to(uid).emit('device-vibrate', {
       duration,
       intensity: intensity / 100 || 1,
-    });
+    });*/
   }
 
   async rotate(
@@ -26,18 +25,18 @@ export class DeviceService {
     speed: number,
     clockwise?: boolean,
   ) {
-    this.socketGateway.server.to(uid).emit('device-rotate', {
+    /*this.socketGateway.server.to(uid).emit('device-rotate', {
       duration,
       speed,
       clockwise,
-    });
+    });*/
   }
 
   async linear(uid: string, duration: number, position: number) {
-    this.socketGateway.server.to(uid).emit('device-linear', {
+    /*this.socketGateway.server.to(uid).emit('device-linear', {
       duration,
       position,
-    });
+    });*/
   }
 
   async scalar(
@@ -52,14 +51,14 @@ export class DeviceService {
       | 'Rotate'
       | 'Vibrate',
   ) {
-    this.socketGateway.server.to(uid).emit('device-scalar', {
+    /*this.socketGateway.server.to(uid).emit('device-scalar', {
       scalar,
       actuatorType,
       duration,
-    });
+    });*/
   }
 
   async stop(uid: string) {
-    this.socketGateway.server.to(uid).emit('device-stop');
+    //this.socketGateway.server.to(uid).emit('device-stop');
   }
 }

@@ -16,10 +16,14 @@ import {
 } from '../lib/errors/friend';
 import { JWTKeycloakUser } from '../lib/interfaces/keycloak';
 import { FriendService } from './friend.service';
+import { FriendGateway } from './friend.gateway';
 
 @Controller('friends')
 export class FriendController {
-  constructor(private readonly friendServer: FriendService) {}
+  constructor(
+    private readonly friendSrv: FriendService,
+    private readonly friendGateway: FriendGateway,
+  ) {}
 
   @UseGuards(AuthGuard)
   @Post('request')
@@ -28,7 +32,7 @@ export class FriendController {
     @Body('uid') uid: string,
   ) {
     try {
-      return await this.friendServer.requestFriendship(user.sub, uid);
+      return await this.friendSrv.requestFriendship(user.sub, uid);
     } catch (e) {
       if (
         e instanceof FriendshipAlreadyExists ||
@@ -51,7 +55,7 @@ export class FriendController {
   @UseGuards(AuthGuard)
   @Get('')
   async getFriends(@AuthenticatedUser() user: JWTKeycloakUser) {
-    return this.friendServer.getFriends(user.sub);
+    return this.friendSrv.getFriends(user.sub);
   }
 
   @UseGuards(AuthGuard)
@@ -60,13 +64,13 @@ export class FriendController {
     @AuthenticatedUser() user: JWTKeycloakUser,
     @Param('uid') uid: string,
   ) {
-    return this.friendServer.getFriend(user.sub, uid);
+    return this.friendSrv.getFriend(user.sub, uid);
   }
 
   @UseGuards(AuthGuard)
   @Get('requests')
   async getFriendshipRequests(@AuthenticatedUser() user: JWTKeycloakUser) {
-    return this.friendServer.getPending(user.sub);
+    return this.friendSrv.getPending(user.sub);
   }
 
   @UseGuards(AuthGuard)
@@ -79,7 +83,7 @@ export class FriendController {
       throw new HttpException('Missing uid in body', 400);
     }
     try {
-      return await this.friendServer.accept(uid, user.sub);
+      return await this.friendSrv.accept(uid, user.sub);
     } catch (e) {
       if (e instanceof FriendshipRequestNotFound) {
         throw new HttpException(
@@ -104,7 +108,7 @@ export class FriendController {
       throw new HttpException('Missing uid in body', 400);
     }
     try {
-      return await this.friendServer.reject(uid, user.sub);
+      return await this.friendSrv.reject(uid, user.sub);
     } catch (e) {
       if (e instanceof FriendshipRequestNotFound) {
         throw new HttpException(
@@ -129,7 +133,7 @@ export class FriendController {
       throw new HttpException('Missing uid in body', 400);
     }
     try {
-      return await this.friendServer.block(uid, user.sub);
+      return await this.friendSrv.block(uid, user.sub);
     } catch (e) {
       if (e instanceof FriendshipRequestNotFound) {
         throw new HttpException(

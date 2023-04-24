@@ -112,3 +112,16 @@ export async function getKCUserById(id: string): Promise<KeycloakUser> {
   );
   return res.data;
 }
+
+export async function verifyToken(token: string): Promise<KeycloakUser> {
+  const res = await axios.get<KeycloakUser>(
+    `${process.env.KEYCLOAK_URL}/realms/pleasurepal/protocol/openid-connect/userinfo`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  return res.data;
+}

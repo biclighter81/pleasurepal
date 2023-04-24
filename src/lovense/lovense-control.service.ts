@@ -5,8 +5,8 @@ import { LovenseService } from './lovense.service';
 import axios from 'axios';
 
 @Injectable()
-export class LovenseControlSservice {
-  private readonly logger: Logger = new Logger(LovenseControlSservice.name);
+export class LovenseControlService {
+  private readonly logger: Logger = new Logger(LovenseControlService.name);
 
   constructor(
     private readonly lovenseSrv: LovenseService,

@@ -7,16 +7,7 @@ import { SlashCommandsModule } from './discord/slash-commands.module';
 import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './datasource';
-import {
-  AuthGuard,
-  KeycloakConnectModule,
-  PolicyEnforcementMode,
-  ResourceGuard,
-  RoleGuard,
-  TokenValidation,
-} from 'nest-keycloak-connect';
-import { UserController } from './user/user.controller';
-import { APP_GUARD } from '@nestjs/core';
+import { KeycloakConnectModule } from 'nest-keycloak-connect';
 import { LovenseModule } from './lovense/lovense.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SchedulerModule } from './scheduler/scheduler.module';
@@ -24,11 +15,15 @@ import { MembershipModule } from './membership/membership.module';
 import { ChatModule } from './chat/chat.module';
 import { DeviceModule } from './device/device.module';
 import { SessionModule } from './session/session.module';
+import { AppGateway } from './app.gateway';
+import { FriendService } from './user/friend.service';
+import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({ ...AppDataSource.options }),
+    TypeOrmModule.forFeature([UserFriendshipRequest]),
     DiscordJSModule.forRootAsync({
       useFactory: () => ({
         token: process.env.DISCORD_TOKEN,
@@ -69,7 +64,7 @@ import { SessionModule } from './session/session.module';
     SessionModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AppGateway, FriendService],
 })
 export class AppModule {
   constructor() {}

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { KeycloakConnectModule } from 'nest-keycloak-connect';
-import { SocketGateway } from '../socket.gateway';
 import { UserFriendshipRequest } from './entities/user-friendship-request.entity';
 import { FriendController } from './friend.controller';
 import { FriendService } from './friend.service';
 import { UserController } from './user.controller';
+import { FriendGateway } from './friend.gateway';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -22,6 +22,11 @@ dotenv.config();
     }),
   ],
   controllers: [UserController, FriendController],
-  providers: [FriendService, SocketGateway],
+  providers: [FriendService, FriendGateway],
+  exports: [
+    FriendService,
+    FriendGateway,
+    TypeOrmModule.forFeature([UserFriendshipRequest]),
+  ],
 })
 export class UserModule {}

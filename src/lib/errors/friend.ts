@@ -22,10 +22,9 @@ export class FriendshipRequestBlocked extends Error {
 export class FriendshipAlreadyExists extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'FrindshipAlreadyExists';
+    this.name = 'FriendshipAlreadyExists';
   }
 }
-
 
 export class FriendshipNotExists extends Error {
   constructor(message: string) {

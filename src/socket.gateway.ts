@@ -32,10 +32,12 @@ export class SocketGateway {
 
   @SubscribeMessage('connect')
   async handleConnection(@ConnectedSocket() client: Socket) {
+    console.log('connected', client.handshake.auth);
     const { sub } = client.handshake.auth;
     await client.join(sub);
     const friends = await this.getFriends(sub);
-    await this.emitStatus('online', friends, sub);
+    //await this.emitStatus('online', friends, sub);
+    console.log('connected', sub);
   }
 
   @SubscribeMessage('disconnect')

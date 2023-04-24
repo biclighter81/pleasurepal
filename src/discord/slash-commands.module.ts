@@ -1,7 +1,5 @@
 import { DiscordModule as DiscordJSModule } from '@discord-nestjs/core';
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { LovenseToy } from 'src/lovense/entities/lovense-toy.entity';
 import { LovenseService } from 'src/lovense/lovense.service';
 import { LeaveCommand } from './commands/leave';
 import { LinkCommand } from './commands/link';
@@ -10,37 +8,24 @@ import { SessionCommand } from './commands/session';
 import { SkipCommand } from './commands/skip';
 import { AuthorizeCommand } from './commands/authorize';
 import { DiscordService } from './discord.service';
-import { LovenseControlSservice } from 'src/lovense/lovense-control.service';
+import { LovenseControlService } from 'src/lovense/lovense-control.service';
 import { SessionInfoCommand } from './commands/session-info';
-import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
-import { User_PleasureSession } from 'src/session/entities/user_plesure_session.join-entity';
-import { ActionQueue } from 'src/session/entities/action-queue.entity';
 import { SessionService } from 'src/session/session.service';
 import { DiscordSessionService } from 'src/session/discord-session.service';
-import { DeferredDiscordInvite } from 'src/session/entities/deferred-discord-invite.entity';
-import { SocketGateway } from 'src/socket.gateway';
-import { UserFriendshipRequest } from 'src/user/entities/user-friendship-request.entity';
 import { DeviceService } from 'src/device/device.service';
-import { LovenseHeartbeat } from 'src/lovense/entities/lovense-heartbeat.entity';
 import { ChatService } from 'src/chat/chat.service';
-import { FriendService } from 'src/user/friend.service';
-import { Conversation } from 'src/chat/entities/conversation.entity';
-import { Message } from 'src/chat/entities/message.entity';
+import { UserModule } from 'src/user/user.module';
+import { LovenseModule } from 'src/lovense/lovense.module';
+import { SessionModule } from 'src/session/session.module';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      LovenseHeartbeat,
-      LovenseToy,
-      PleasureSession,
-      User_PleasureSession,
-      ActionQueue,
-      DeferredDiscordInvite,
-      UserFriendshipRequest,
-      Conversation,
-      Message,
-    ]),
     DiscordJSModule.forFeature(),
+    UserModule,
+    LovenseModule,
+    SessionModule,
+    ChatModule,
   ],
   providers: [
     LinkCommand,
@@ -51,14 +36,12 @@ import { Message } from 'src/chat/entities/message.entity';
     AuthorizeCommand,
     SessionInfoCommand,
     LovenseService,
-    LovenseControlSservice,
+    LovenseControlService,
     DiscordService,
     SessionService,
     DiscordSessionService,
-    SocketGateway,
     DeviceService,
     ChatService,
-    FriendService,
   ],
 })
 export class SlashCommandsModule {}

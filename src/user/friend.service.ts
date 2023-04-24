@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getKCUserById } from 'src/lib/keycloak';
 import { IsNull, Repository } from 'typeorm';
@@ -8,8 +8,8 @@ import {
   FriendshipRequestNotFound,
   FriendshipAlreadyExists,
 } from '../lib/errors/friend';
-import { SocketGateway } from '../socket.gateway';
 import { UserFriendshipRequest } from './entities/user-friendship-request.entity';
+import { FriendGateway } from './friend.gateway';
 
 @Injectable()
 export class FriendService {
@@ -18,7 +18,8 @@ export class FriendService {
   constructor(
     @InjectRepository(UserFriendshipRequest)
     private readonly userFriendshipRequestRepo: Repository<UserFriendshipRequest>,
-    private readonly socketGateway: SocketGateway,
+    @Inject(forwardRef(() => FriendGateway))
+    private readonly friendGateway: FriendGateway,
   ) {}
 
   async fetchByTo(from: string, to: string) {
@@ -40,12 +41,12 @@ export class FriendService {
   }
 
   async emitRequest(from: string, to: string) {
-    const socket = this.socketGateway.server;
+    const socket = this.friendGateway.wss;
     socket.to(to).emit('friendship-request', { from, to });
   }
 
   async emitAccept(from: string, to: string, byRequest?: boolean) {
-    const socket = this.socketGateway.server;
+    const socket = this.friendGateway.wss;
     socket.to(from).emit('friendship-accept', { from, to });
     socket.to(to).emit('friend-online', { uid: from });
     if (byRequest) {

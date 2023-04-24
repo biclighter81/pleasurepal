@@ -5,25 +5,27 @@ import { LovenseToy } from './entities/lovense-toy.entity';
 import { LovenseController } from './lovense.controller';
 import { LovenseService } from './lovense.service';
 import { DiscordService } from 'src/discord/discord.service';
-import { LovenseControlSservice } from './lovense-control.service';
+import { LovenseControlService } from './lovense-control.service';
 import { LovenseHeartbeat } from './entities/lovense-heartbeat.entity';
 import { User_PleasureSession } from 'src/session/entities/user_plesure_session.join-entity';
-import { PleasureSession } from 'src/session/entities/pleasure-session.entity';
-import { ActionQueue } from 'src/session/entities/action-queue.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       LovenseHeartbeat,
       LovenseToy,
-      PleasureSession,
       User_PleasureSession,
-      ActionQueue,
     ]),
     DiscordModule.forFeature(),
   ],
   controllers: [LovenseController],
-  providers: [LovenseService, LovenseControlSservice, DiscordService],
-  exports: [],
+  providers: [LovenseService, LovenseControlService, DiscordService],
+  exports: [
+    TypeOrmModule.forFeature([
+      LovenseHeartbeat,
+      LovenseToy,
+      User_PleasureSession,
+    ]),
+  ],
 })
 export class LovenseModule {}

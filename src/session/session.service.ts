@@ -3,10 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ChatService } from 'src/chat/chat.service';
 import { NoSessionFoundError } from 'src/lib/errors/session';
 import { generateName } from 'src/lib/name-generator';
-import { SocketGateway } from 'src/socket.gateway';
 import { In, IsNull, Repository } from 'typeorm';
 import { PleasureSession } from './entities/pleasure-session.entity';
 import { User_PleasureSession } from './entities/user_plesure_session.join-entity';
+import { SessionGateway } from './session.gateway';
 
 @Injectable()
 export class SessionService {
@@ -15,7 +15,7 @@ export class SessionService {
     private readonly sessionRepo: Repository<PleasureSession>,
     @InjectRepository(User_PleasureSession)
     private readonly userSessionRepo: Repository<User_PleasureSession>,
-    private readonly socketGateway: SocketGateway,
+    private readonly sessionGateway: SessionGateway,
     private readonly chatSrv: ChatService,
   ) {}
 
@@ -74,7 +74,7 @@ export class SessionService {
       where: { id: sessionId },
       relations: ['user'],
     });
-    this.socketGateway.server.to(uid).emit('pleasure-session-invite', {
+    this.sessionGateway.wss.to(uid).emit('pleasure-session-invite', {
       sessionId: session.id,
       initiatorUid,
     });
@@ -127,7 +127,7 @@ export class SessionService {
   }
 
   async inviteAnswered(sessionId: string, uid: string) {
-    this.socketGateway.server.to(uid).emit('pleasure-session-invite-answered', {
+    this.sessionGateway.wss.to(uid).emit('pleasure-session-invite-answered', {
       sessionId,
     });
   }
