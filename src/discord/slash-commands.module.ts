@@ -20,15 +20,15 @@ import { ChatService } from 'src/chat/chat.service';
 import { FriendService } from 'src/user/friend.service';
 import { Conversation } from 'src/chat/entities/conversation.entity';
 import { Message } from 'src/chat/entities/message.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from 'src/user/user.module';
+import { LovenseModule } from 'src/lovense/lovense.module';
+import { SessionModule } from 'src/session/session.module';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      LovenseHeartbeat,
-      LovenseToy,
-      PleasureSession,
-      User_PleasureSession,
-      ActionQueue,
       DeferredDiscordInvite,
       UserFriendshipRequest,
       Conversation,

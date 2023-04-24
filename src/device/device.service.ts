@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { SocketGateway } from 'src/socket.gateway';
 
 @Injectable()
 export class DeviceService {
-  constructor(private readonly socketGateway: SocketGateway) {}
+  constructor() {}
 
   async selfCommand(
     uid: string,
@@ -60,6 +59,6 @@ export class DeviceService {
   }
 
   async stop(uid: string) {
-    this.socketGateway.server.to(uid).emit('device-stop');
+    //this.socketGateway.server.to(uid).emit('device-stop');
   }
 }
