@@ -34,12 +34,20 @@ export class SessionService {
   }
 
   async getSessions(uid: string, offset?: number) {
-    return this.sessionRepo.find({
+    const total = await this.sessionRepo.count({
+      where: { user: { uid: uid } },
+    });
+    const sessions = await this.sessionRepo.find({
       where: { user: { uid: uid } },
       skip: offset,
       take: 10,
       relations: ['user'],
+      order: {
+        active: 'DESC',
+        updatedAt: 'DESC',
+      },
     });
+    return { sessions, total, offset };
   }
 
   async searchSessions(uid: string, q: string, offset?: number) {
@@ -47,10 +55,16 @@ export class SessionService {
       `select id from pleasure_session ps inner join user_pleasure_session ups on ps.id = ups."pleasureSessionId" where ups."uid"::text = $1 and (ps."name" ilike $2 or ups.uid::text ilike $2 or ps.id::text ilike $2)`,
       [uid, `%${q}%`],
     )) as { id: string }[];
-    return this.sessionRepo.find({
+    const total = searchResult.length;
+    const sessions = await this.sessionRepo.find({
       where: { id: In(searchResult.map((r) => r.id)) },
       relations: ['user'],
+      order: {
+        active: 'DESC',
+        updatedAt: 'DESC',
+      },
     });
+    return { sessions, total, offset };
   }
 
   async authorizeMember(sessionId: string, uid: string) {

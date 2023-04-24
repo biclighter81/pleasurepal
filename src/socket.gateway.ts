@@ -9,6 +9,8 @@ import {
 import { Server, Socket } from 'socket.io';
 import { IsNull, Not, Repository } from 'typeorm';
 import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
+import { DeviceInfo } from './lib/interfaces/device';
+import { createHash } from 'crypto';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -62,17 +64,15 @@ export class SocketGateway {
   @SubscribeMessage('device-added')
   async handleDeviceAdded(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: any,
-  ) {
-    debugger;
-  }
+    @MessageBody() payload: DeviceInfo,
+  ) {}
 
   @SubscribeMessage('device-removed')
   async handleDeviceRemoved(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: DeviceInfo,
     @MessageBody() payload: any,
   ) {
-    debugger;
+    const hash = createHash('md5').update(payload.name).digest('hex');
   }
 
   async emitStatus(

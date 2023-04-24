@@ -9,6 +9,7 @@ import { PleasureSession } from './session/entities/pleasure-session.entity';
 import { User_PleasureSession } from './session/entities/user_plesure_session.join-entity';
 import { ActionQueue } from './session/entities/action-queue.entity';
 import { DeferredDiscordInvite } from './session/entities/deferred-discord-invite.entity';
+import { Device } from './device/entities/device.entity';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -31,6 +32,7 @@ export const AppDataSource = new DataSource({
     ConversationParticipants,
     Message,
     DeferredDiscordInvite,
+    Device,
   ],
   schema: process.env.DB_SCHEMA,
   synchronize: true,
