@@ -9,6 +9,7 @@ import { Conversation } from './entities/conversation.entity';
 import { ConversationParticipants } from './entities/conversation-participants.entity';
 import { Message } from './entities/message.entity';
 import { UserModule } from 'src/user/user.module';
+import { ChatGateway } from './chat.gateways';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');
@@ -25,8 +26,8 @@ dotenv.config();
     }),
     UserModule,
   ],
-  providers: [ChatService, FriendService],
+  providers: [ChatService, FriendService, ChatGateway],
   controllers: [ChatController],
-  exports: [TypeOrmModule.forFeature([Conversation, Message])],
+  exports: [TypeOrmModule.forFeature([Conversation, Message]), ChatGateway],
 })
 export class ChatModule {}

@@ -7,7 +7,7 @@ import { FriendService } from '../user/friend.service';
 import { Conversation } from './entities/conversation.entity';
 import * as crypto from 'crypto';
 import { Message } from './entities/message.entity';
-//import { SocketGateway } from '../socket.gateway';
+import { ChatGateway } from './chat.gateways';
 
 @Injectable()
 export class ChatService {
@@ -17,8 +17,8 @@ export class ChatService {
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
-  ) //private readonly socketGateway: SocketGateway,
-  {}
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   async getDirectConversation(
     requesterUid: string,
@@ -72,7 +72,7 @@ export class ChatService {
     });
     return {
       ...conversation,
-      messages,
+      messages: messages.reverse(),
     };
   }
 
@@ -148,7 +148,6 @@ export class ChatService {
       content: message,
       sender: requesterUid,
     });
-    //const socket = this.socketGateway.server;
     const fullConversation = await this.conversationRepo.findOne({
       where: {
         id: conversationId,
@@ -157,8 +156,9 @@ export class ChatService {
     });
     fullConversation.participants.forEach((participant) => {
       if (participant.participantId !== requesterUid) {
-        console.log(participant.participantId);
-        //socket.to(participant.participantId).emit('message', messageEntity);
+        this.chatGateway.wss
+          .to(participant.participantId)
+          .emit('message', messageEntity);
       }
     });
     return messageEntity;
