@@ -18,12 +18,11 @@ export class ChatService {
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
     private readonly chatGateway: ChatGateway,
-  ) {}
+  ) { }
 
   async getDirectConversation(
     requesterUid: string,
     uid: string,
-    offset?: number,
   ) {
     const conversations = (await this.conversationRepo.query(
       `
@@ -50,29 +49,56 @@ export class ChatService {
       [requesterUid, uid],
     )) as { conversationId: string }[];
     if (!conversations.length) {
-      throw new ConversationNotFoundError('Conversation not found!');
+      const friend = this.friendSrv.getFriend(requesterUid, uid);
+      if (!friend) {
+        throw new ConversationNotFoundError('Conversation not found!');
+      }
+      return await this.createDirectConversation(requesterUid, uid);
     }
-    const conversation = await this.conversationRepo.findOne({
+    return this.conversationRepo.findOne({
       where: {
         id: conversations[0].conversationId,
       },
       relations: ['participants'],
     });
+
+  }
+
+  async getMessages(conversationId: string, uid: string, offset?: number) {
+    const conversation = await this.conversationRepo.findOne({
+      where: {
+        id: conversationId,
+        participants: {
+          participantId: uid,
+        }
+      },
+      select: ['id']
+    });
+    if (!conversation) {
+      throw new ConversationNotFoundError('Conversation not found!');
+    }
+    const count = await this.messageRepo.count({
+      where: {
+        conversation: {
+          id: conversation.id,
+        },
+      },
+    });
     const messages = await this.messageRepo.find({
       where: {
         conversation: {
-          id: conversations[0].conversationId,
+          id: conversation.id,
         },
       },
-      take: 100,
+      take: 50,
       skip: offset || 0,
       order: {
         sendAt: 'DESC',
       },
     });
     return {
-      ...conversation,
-      messages: messages.reverse(),
+      messages,
+      nextOffset: offset + 50 < count ? offset + 50 : null,
     };
   }
 

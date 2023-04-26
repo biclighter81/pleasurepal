@@ -17,10 +17,34 @@ export class ChatController {
     async getDirectConversation(
         @AuthenticatedUser() user: JWTKeycloakUser,
         @Param('uid') uid: string,
-        @Query('offset') offset?: number,
+        @Query('offset') offset?: string,
     ) {
         try {
-            return await this.chatService.getDirectConversation(user.sub, uid, offset);
+            return await this.chatService.getDirectConversation(user.sub, uid);
+        } catch (e) {
+            if (e instanceof ConversationNotFoundError) {
+                throw new HttpException({
+                    message: e.message,
+                    name: e.name,
+                }, 404);
+            }
+            console.log(e)
+            throw new HttpException({
+                message: e.message,
+                name: e.name,
+            }, 500);
+        }
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('messages/:conversationId')
+    async getMessages(
+        @AuthenticatedUser() user: JWTKeycloakUser,
+        @Param('conversationId') conversationId: string,
+        @Query('offset') offset?: string,
+    ) {
+        try {
+            return await this.chatService.getMessages(conversationId, user.sub, parseInt(offset));
         } catch (e) {
             if (e instanceof ConversationNotFoundError) {
                 throw new HttpException({
