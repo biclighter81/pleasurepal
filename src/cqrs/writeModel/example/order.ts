@@ -4,12 +4,11 @@ import {
   IAggregate,
   Order,
   OrderCreatedEvent,
+  OrderEvents,
   OrderShippedEvent,
 } from 'src/cqrs/types';
 import { WriterService } from '../writer.service';
 import { OrderReducer } from 'src/cqrs/reducer/order.reducer';
-
-type OrderEvents = OrderCreatedEvent | OrderShippedEvent;
 
 @Injectable()
 export class OrderAggregate implements IAggregate<Order, OrderEvents> {
