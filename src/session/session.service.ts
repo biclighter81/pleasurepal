@@ -33,6 +33,17 @@ export class SessionService {
     return { ...session, user: users };
   }
 
+  async getSession(id: string, uid: string) {
+    const session = await this.sessionRepo.findOne({
+      where: { id: id, user: [{ uid: uid }] },
+      relations: ['user'],
+    });
+    if (!session) {
+      throw new NoSessionFoundError(`No session found with id ${id}`);
+    }
+    return session;
+  }
+
   async getSessions(uid: string, offset?: number) {
     const total = await this.sessionRepo.count({
       where: { user: { uid: uid } },

@@ -234,6 +234,7 @@ export class FriendService {
         ...f,
         username: friend.username,
         email: friend.email,
+        uid: friendUid,
       };
     });
   }
