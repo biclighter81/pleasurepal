@@ -18,12 +18,15 @@ import { SessionModule } from './session/session.module';
 import { AppGateway } from './app.gateway';
 import { FriendService } from './user/friend.service';
 import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CqrsModule } from './cqrs/cqrs.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({ ...AppDataSource.options }),
     TypeOrmModule.forFeature([UserFriendshipRequest]),
+    EventEmitterModule.forRoot(),
     DiscordJSModule.forRootAsync({
       useFactory: () => ({
         token: process.env.DISCORD_TOKEN,
@@ -62,6 +65,7 @@ import { UserFriendshipRequest } from './user/entities/user-friendship-request.e
     ChatModule,
     DeviceModule,
     SessionModule,
+    CqrsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway, FriendService],

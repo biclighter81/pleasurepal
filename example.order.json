@@ -1,0 +1,19 @@
+[
+  { "name": "OrderCreatedEvent", "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4" },
+  { "name": "OrderCreatedEvent", "id": "862f6d63-778d-4e6b-bf6c-c6b08d53a35c" },
+  {
+    "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4",
+    "payload": { "shippingAddress": "Test 1" },
+    "name": "OrderShippedEvent"
+  },
+  {
+    "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4",
+    "payload": { "shippingAddress": "Test 23" },
+    "name": "OrderShippedEvent"
+  },
+  {
+    "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4",
+    "payload": { "shippingAddress": "Test 12222" },
+    "name": "OrderShippedEvent"
+  }
+]
