@@ -1,19 +1,18 @@
 [
-  { "name": "OrderCreatedEvent", "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4" },
-  { "name": "OrderCreatedEvent", "id": "862f6d63-778d-4e6b-bf6c-c6b08d53a35c" },
   {
-    "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4",
-    "payload": { "shippingAddress": "Test 1" },
-    "name": "OrderShippedEvent"
+    "name": "OrderCreatedEvent",
+    "id": "c04e7080-85d7-4aa7-b5f6-04e5c6305ab7",
+    "timestamp": 1682968810359
   },
   {
-    "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4",
-    "payload": { "shippingAddress": "Test 23" },
-    "name": "OrderShippedEvent"
+    "name": "OrderCreatedEvent",
+    "id": "9652965d-407a-4bd2-82bb-883e6bc24664",
+    "timestamp": 1682968815928
   },
   {
-    "id": "b032e8d9-5dab-4ab7-b365-8c2248e40fe4",
-    "payload": { "shippingAddress": "Test 12222" },
-    "name": "OrderShippedEvent"
+    "name": "OrderShippedEvent",
+    "id": "c04e7080-85d7-4aa7-b5f6-04e5c6305ab7",
+    "timestamp": 1682968831850,
+    "payload": { "shippingAddress": "Test 12222" }
   }
 ]

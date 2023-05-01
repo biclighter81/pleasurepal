@@ -1,46 +1,25 @@
 import { randomUUID } from 'crypto';
+import { extend } from 'dayjs';
 
 export interface IAggregate<T, U extends IEvent> {
   name: string;
   inistialState: Partial<T>;
   emit: (event: U, payload: any) => void;
-  getState: (id: string) => Promise<Partial<T>>;
+  reducer: IReducer<U>;
 }
 
-export interface IEvent {
+export interface IReducer<T> {
+  eventHandlers: Map<string, (event: T, state: any) => Partial<Order>>;
+}
+
+export abstract class IEvent {
   name: string;
   id: string;
+  uid: string;
+  timestamp: number = Date.now();
 }
 
-type OrderEvents = OrderCreatedEvent | OrderShippedEvent;
-
-export class OrderReducer {
-  public eventHandlers = new Map<
-    string,
-    (event: OrderEvents, state: any) => Partial<Order>
-  >();
-  constructor() {
-    this.eventHandlers.set('OrderShippedEvent', this.onOrderShippedEvent);
-    this.eventHandlers.set('OrderCreatedEvent', this.onOrderCreatedEvent);
-  }
-
-  private onOrderShippedEvent(event: OrderShippedEvent, state: any) {
-    console.log('OrderShippedEvent', event.payload, state, 'merge');
-    return {
-      ...state,
-      status: 'shipped',
-      shippingAddress: event.payload.shippingAddress,
-    };
-  }
-
-  private onOrderCreatedEvent(event: OrderCreatedEvent, state: any) {
-    console.log('OrderCreatedEvent', state, 'merge');
-    return {
-      id: event.id,
-      status: 'created',
-    };
-  }
-}
+export type OrderEvents = OrderCreatedEvent | OrderShippedEvent;
 
 export class Order {
   id: string;
@@ -51,15 +30,17 @@ export class Order {
   paymentMethod: string;
 }
 
-export class OrderCreatedEvent implements IEvent {
+export class OrderCreatedEvent extends IEvent {
   name = 'OrderCreatedEvent';
-  id: string;
   constructor() {
+    super();
     this.id = randomUUID();
   }
 }
 
-export class OrderShippedEvent implements IEvent {
+export class OrderShippedEvent extends IEvent {
   name = 'OrderShippedEvent';
-  constructor(public id: string, public payload: { shippingAddress: string }) {}
+  constructor(public id: string, public payload: { shippingAddress: string }) {
+    super();
+  }
 }

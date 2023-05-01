@@ -4,10 +4,10 @@ import {
   IAggregate,
   Order,
   OrderCreatedEvent,
-  OrderReducer,
   OrderShippedEvent,
 } from 'src/cqrs/types';
 import { WriterService } from '../writer.service';
+import { OrderReducer } from 'src/cqrs/reducer/order.reducer';
 
 type OrderEvents = OrderCreatedEvent | OrderShippedEvent;
 
@@ -27,15 +27,6 @@ export class OrderAggregate implements IAggregate<Order, OrderEvents> {
     this.writer.save(this.name, event);
   }
 
-  async getState(id: string) {
-    const events = await this.writer.load<OrderEvents>(this.name, id);
-    let state = this.inistialState;
-    for (const event of events) {
-      state = this.reducer.eventHandlers.get(event.name)(event, state);
-    }
-    return state;
-  }
-
   @OnEvent('example.order.ship', {
     async: true,
   })
@@ -48,7 +39,11 @@ export class OrderAggregate implements IAggregate<Order, OrderEvents> {
         throw new Error('Shipping address is required');
       }
 
-      const state = await this.getState(payload.id);
+      const state = await this.writer.getState(
+        this.name,
+        payload.id,
+        this.reducer,
+      );
       if (!state) {
         throw new Error('Order not found');
       }
