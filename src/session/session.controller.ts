@@ -85,8 +85,8 @@ export class SessionController {
     @Query() query: any,
   ) {
     const { offset = 0, q } = query;
-    if (q) return this.sessionSrv.searchSessions(user.sub, q, offset);
-    return this.sessionSrv.getSessions(user.sub, offset);
+    if (q) return this.sessionSrv.searchSessions(user.sub, q, parseInt(offset));
+    return this.sessionSrv.getSessions(user.sub, parseInt(offset));
   }
 
   @UseGuards(AuthGuard)

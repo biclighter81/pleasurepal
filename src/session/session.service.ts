@@ -37,6 +37,9 @@ export class SessionService {
     const total = await this.sessionRepo.count({
       where: { user: { uid: uid } },
     });
+    const count = await this.sessionRepo.count({
+      where: { user: { uid: uid } },
+    });
     const sessions = await this.sessionRepo.find({
       where: { user: { uid: uid } },
       skip: offset,
@@ -47,7 +50,12 @@ export class SessionService {
         updatedAt: 'DESC',
       },
     });
-    return { sessions, total, offset };
+    return {
+      sessions,
+      total,
+      offset,
+      nextOffset: offset + 10 < count ? offset + 10 : null,
+    };
   }
 
   async searchSessions(uid: string, q: string, offset?: number) {
