@@ -16,7 +16,7 @@ export class OrderReducer implements IReducer<OrderEvents> {
     this.eventHandlers.set('OrderCreatedEvent', this.onOrderCreatedEvent);
   }
 
-  private onOrderShippedEvent(event: OrderShippedEvent, state: any) {
+  private onOrderShippedEvent(event: OrderShippedEvent, state: Partial<Order>) {
     console.log('OrderShippedEvent', event.payload, state, 'merge');
     return {
       ...state,
@@ -25,7 +25,7 @@ export class OrderReducer implements IReducer<OrderEvents> {
     };
   }
 
-  private onOrderCreatedEvent(event: OrderCreatedEvent, state: any) {
+  private onOrderCreatedEvent(event: OrderCreatedEvent, state: Partial<Order>) {
     console.log('OrderCreatedEvent', state, 'merge');
     return {
       id: event.id,

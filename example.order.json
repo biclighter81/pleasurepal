@@ -1,18 +1,1 @@
-[
-  {
-    "name": "OrderCreatedEvent",
-    "id": "c04e7080-85d7-4aa7-b5f6-04e5c6305ab7",
-    "timestamp": 1682968810359
-  },
-  {
-    "name": "OrderCreatedEvent",
-    "id": "9652965d-407a-4bd2-82bb-883e6bc24664",
-    "timestamp": 1682968815928
-  },
-  {
-    "name": "OrderShippedEvent",
-    "id": "c04e7080-85d7-4aa7-b5f6-04e5c6305ab7",
-    "timestamp": 1682968831850,
-    "payload": { "shippingAddress": "Test 12222" }
-  }
-]
+[{"name":"OrderCreatedEvent","id":"64513456031ea48ec8c4d78a","timestamp":1683043414383},{"name":"OrderShippedEvent","id":"64513456031ea48ec8c4d78a","timestamp":1683043433376,"payload":{"shippingAddress":"Test"}}]

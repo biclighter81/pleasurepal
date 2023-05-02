@@ -37,6 +37,7 @@ export class WriterService {
     const json = JSON.parse(data);
     json.push(event);
     writeFileSync(`./${aggName}.json`, JSON.stringify(json), 'utf-8');
+    //emit event to read model
     this.emitter.emit(event.name, event);
   }
 

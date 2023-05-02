@@ -46,14 +46,4 @@ export class CqrsController {
     }
     return result;
   }
-
-  @Get(':context/:aggregate/:id')
-  async query(
-    @Param('context') context: string,
-    @Param('aggregate') aggregate: string,
-    @Param('id') id: string,
-  ) {
-    //implement reader service to get data from read model
-    return {};
-  }
 }

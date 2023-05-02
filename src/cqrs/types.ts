@@ -1,5 +1,4 @@
-import { randomUUID } from 'crypto';
-import { extend } from 'dayjs';
+import mongoose from 'mongoose';
 
 export interface IAggregate<T, U extends IEvent> {
   name: string;
@@ -34,7 +33,7 @@ export class OrderCreatedEvent extends IEvent {
   name = 'OrderCreatedEvent';
   constructor() {
     super();
-    this.id = randomUUID();
+    this.id = new mongoose.Types.ObjectId().toHexString();
   }
 }
 

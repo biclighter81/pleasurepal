@@ -20,12 +20,16 @@ import { FriendService } from './user/friend.service';
 import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CqrsModule } from './cqrs/cqrs.module';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({ ...AppDataSource.options }),
     TypeOrmModule.forFeature([UserFriendshipRequest]),
+    MongooseModule.forRoot(process.env.MONGODB_URL, {
+      dbName: 'pleasurepal',
+    }),
     EventEmitterModule.forRoot(),
     DiscordJSModule.forRootAsync({
       useFactory: () => ({
