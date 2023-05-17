@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryColumn } from "typeorm";
 import { Conversation } from "./conversation.entity";
 
 @Entity()
@@ -7,6 +7,8 @@ export class ConversationParticipants {
     conversationId: string;
     @PrimaryColumn()
     participantId: string;
+    @Column({ nullable: true })
+    lastReadAt: Date;
     @ManyToOne(() => Conversation, conversation => conversation.participants)
     @JoinColumn({ name: 'conversationId' })
     conversation: Conversation;

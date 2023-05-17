@@ -8,6 +8,7 @@ import { Conversation } from './entities/conversation.entity';
 import * as crypto from 'crypto';
 import { Message } from './entities/message.entity';
 import { ChatGateway } from './chat.gateways';
+import { ConversationParticipants } from './entities/conversation-participants.entity';
 
 @Injectable()
 export class ChatService {
@@ -15,6 +16,8 @@ export class ChatService {
     private readonly friendSrv: FriendService,
     @InjectRepository(Conversation)
     private readonly conversationRepo: Repository<Conversation>,
+    @InjectRepository(ConversationParticipants)
+    private readonly participantsRepo: Repository<ConversationParticipants>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
     private readonly chatGateway: ChatGateway,
@@ -76,6 +79,15 @@ export class ChatService {
     });
     if (!conversation) {
       throw new ConversationNotFoundError('Conversation not found!');
+    }
+    if (!offset) {
+      //set all messages as read
+      await this.participantsRepo.update({
+        conversationId: conversation.id,
+        participantId: uid,
+      }, {
+        lastReadAt: new Date(),
+      })
     }
     const count = await this.messageRepo.count({
       where: {

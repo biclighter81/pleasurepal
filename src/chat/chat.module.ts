@@ -17,7 +17,7 @@ dotenv.config();
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Conversation, Message]),
+    TypeOrmModule.forFeature([Conversation, Message, ConversationParticipants]),
     KeycloakConnectModule.register({
       authServerUrl: process.env.KEYCLOAK_URL,
       realm: process.env.KEYCLOAK_REALM,
@@ -28,6 +28,6 @@ dotenv.config();
   ],
   providers: [ChatService, FriendService, ChatGateway],
   controllers: [ChatController],
-  exports: [TypeOrmModule.forFeature([Conversation, Message]), ChatGateway],
+  exports: [TypeOrmModule.forFeature([Conversation, Message, ConversationParticipants]), ChatGateway],
 })
-export class ChatModule {}
+export class ChatModule { }
