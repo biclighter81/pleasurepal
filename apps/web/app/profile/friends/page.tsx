@@ -1,3 +1,4 @@
+'use client'
 import { useState } from "react";
 import { IconMessageCircle2, IconUserSearch } from "@tabler/icons-react";
 import { createAvatar } from "@dicebear/core";
@@ -8,7 +9,7 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { useSession } from "next-auth/react";
 import { useFriendStore } from "@/stores/friend.store";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { Friend, User } from "@/lib/types/friend";
 
 export default function Friends() {
@@ -58,9 +59,8 @@ export default function Friends() {
           </div>
         </div>
         <div
-          className={`mt-2 ${
-            !users?.length && "hidden"
-          } max-h-[200px] overflow-y-auto`}
+          className={`mt-2 ${!users?.length && "hidden"
+            } max-h-[200px] overflow-y-auto`}
         >
           {users?.length && (
             <div className="flex flex-col space-y-2">
@@ -110,11 +110,10 @@ export default function Friends() {
                     <img src={getAvatar(friendUid).toDataUriSync()} />
                   </div>
                   <div
-                    className={`w-2 h-2 ${
-                      friendStore.onlineFriends.includes(friendUid)
-                        ? "bg-green-400"
-                        : "bg-red-400"
-                    } rounded-full animate-pulse`}
+                    className={`w-2 h-2 ${friendStore.onlineFriends.includes(friendUid)
+                      ? "bg-green-400"
+                      : "bg-red-400"
+                      } rounded-full animate-pulse`}
                   />
                   <h6
                     className="text-sm uppercase font-bold hover:cursor-pointer"

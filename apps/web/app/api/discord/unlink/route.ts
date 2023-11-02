@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import KeycloaAdminCli from "@keycloak/keycloak-admin-client";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]";
+import { authOptions } from "../../auth/[...nextauth]/route";
 
-export default async function handler(
+export default async function POST(
   req: NextApiRequest,
   res: NextApiResponse
 ) {

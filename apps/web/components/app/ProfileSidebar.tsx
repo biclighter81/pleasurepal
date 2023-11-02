@@ -1,3 +1,4 @@
+'use client'
 import { identicon } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
 import { Transition } from "@headlessui/react";
@@ -10,7 +11,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useAppStore } from "../../stores/app.store";
 

@@ -1,3 +1,4 @@
+'use client'
 import { acceptInvite, declineInvite } from "@/lib/functions/session";
 import { useAppStore } from "@/stores/app.store";
 import {

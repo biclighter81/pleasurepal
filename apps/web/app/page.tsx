@@ -1,6 +1,5 @@
 import BlobTop from '@/components/blob/BlobTop';
 import ButtonBlob from '@/components/blob/ButtonBlob';
-import useSWR from 'swr';
 import {
   IconActivityHeartbeat,
   IconBrandDiscord,
@@ -8,14 +7,12 @@ import {
   IconHeartHandshake,
 } from '@tabler/icons-react';
 import Button from '../components/app/interaction/Button';
-import { FetcherError, fetcher } from '@/lib/fetcher';
-import { FriendRequest } from '@/lib/types/friend';
 
 export default function Home() {
-  const { data, error, isLoading } = useSWR<FriendRequest[], FetcherError>(
+  /*const { data, error, isLoading } = useSWR<FriendRequest[], FetcherError>(
     'friends/requests',
     fetcher
-  );
+  );*/
   return (
     <>
       <BlobTop />
@@ -72,7 +69,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      {/* Our Platfrom section */}
+       {/*Our Platfrom section*/}
       <div className='mx-10 my-24'>
         <div className='mb-8'>
           <h1 className='uppercase font-black text-5xl'>Our Platform</h1>

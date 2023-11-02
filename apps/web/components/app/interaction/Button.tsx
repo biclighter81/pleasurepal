@@ -1,4 +1,5 @@
-import { useRouter } from "next/router";
+'use client'
+import { useRouter } from "next/navigation";
 
 export default function Button({
   text,
@@ -13,13 +14,13 @@ export default function Button({
   onClick?: () => void;
   href?: string;
   theme?:
-    | "primary"
-    | "primary-gradient"
-    | "light-dark"
-    | "white"
-    | "danger"
-    | "warn"
-    | "dark";
+  | "primary"
+  | "primary-gradient"
+  | "light-dark"
+  | "white"
+  | "danger"
+  | "warn"
+  | "dark";
   icon?: React.ReactNode;
   disabled?: boolean;
   iconPosition?: "start" | "end";
@@ -29,22 +30,21 @@ export default function Button({
     theme === "primary"
       ? "bg-primary-500"
       : theme === "primary-gradient"
-      ? "bg-gradient-to-br from-primary-500 to-secondary-500"
-      : theme === "white"
-      ? "bg-white text-black"
-      : theme === "danger"
-      ? "bg-red-400"
-      : theme === "warn"
-      ? "bg-yellow-400"
-      : theme === "dark"
-      ? "bg-dark"
-      : "bg-light-dark";
+        ? "bg-gradient-to-br from-primary-500 to-secondary-500"
+        : theme === "white"
+          ? "bg-white text-black"
+          : theme === "danger"
+            ? "bg-red-400"
+            : theme === "warn"
+              ? "bg-yellow-400"
+              : theme === "dark"
+                ? "bg-dark"
+                : "bg-light-dark";
 
   return (
     <button
-      className={`px-12 py-3 text-sm rounded-full uppercase font-semibold hover:scale-105 transition duration-300 ease-in-out ${color} h-10 flex items-center ${
-        disabled && "opacity-50 cursor-not-allowed"
-      }}`}
+      className={`px-12 py-3 text-sm rounded-full uppercase font-semibold hover:scale-105 transition duration-300 ease-in-out ${color} h-10 flex items-center ${disabled && "opacity-50 cursor-not-allowed"
+        }}`}
       disabled={disabled}
       onClick={() => {
         if (onClick) {

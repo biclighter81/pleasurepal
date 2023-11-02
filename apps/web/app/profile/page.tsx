@@ -1,3 +1,4 @@
+'use client'
 import Button from "@/components/app/interaction/Button";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,7 +64,7 @@ export default function Profile() {
             onClick={async () => {
               const res = await fetch(
                 process.env.NEXT_PUBLIC_PLEASUREPAL_API +
-                  "/api/device/self-command",
+                "/api/device/self-command",
                 {
                   method: "POST",
                   headers: {
@@ -90,7 +91,7 @@ export default function Profile() {
             onClick={async () => {
               const res = await fetch(
                 process.env.NEXT_PUBLIC_PLEASUREPAL_API +
-                  "/api/device/self-random",
+                "/api/device/self-random",
                 {
                   method: "POST",
                   headers: {

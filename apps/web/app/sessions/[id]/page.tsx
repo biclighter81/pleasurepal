@@ -1,10 +1,12 @@
+'use client'
 import { fetcher } from "@/lib/fetcher";
-import { useRouter } from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 
 export default function Session() {
   const router = useRouter();
-  const { id } = router.query;
+  const params = useSearchParams()
+  const id = params.get('id')
 
   const { data, isLoading, error } = useSWR(id && `session/${id}`, fetcher);
 

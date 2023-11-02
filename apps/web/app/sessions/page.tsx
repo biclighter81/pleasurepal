@@ -1,8 +1,9 @@
+'use client'
 import DarkInput from "@/components/app/interaction/DarkInput";
 import Paginator from "@/components/app/interaction/Paginator";
 import Button from "@/components/app/interaction/Button";
 import { IconPlus, IconSearch } from "@tabler/icons-react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import useSWRInfinite from "swr/infinite";
 import { fetcher } from "@/lib/fetcher";
@@ -32,8 +33,8 @@ export default function Sessions() {
     () =>
       data
         ? data[size - 1 || 0]?.sessions.sort(
-            (a: any, b: any) => b.active - a.active
-          )
+          (a: any, b: any) => b.active - a.active
+        )
         : [],
     [data, size]
   );
@@ -72,9 +73,8 @@ export default function Sessions() {
                 className="bg-dark px-8 py-4 rounded-lg flex items-center space-x-4"
               >
                 <div
-                  className={`${
-                    session.active ? "bg-green-600" : "bg-yellow-600"
-                  } text-center bg-opacity-100 px-2 py-1 text-xs uppercase font-bold rounded-md min-w-[80px]`}
+                  className={`${session.active ? "bg-green-600" : "bg-yellow-600"
+                    } text-center bg-opacity-100 px-2 py-1 text-xs uppercase font-bold rounded-md min-w-[80px]`}
                 >
                   {session.active ? "Active" : "Inactive"}
                 </div>

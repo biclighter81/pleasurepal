@@ -3,9 +3,9 @@ import KeycloaAdminCli from "@keycloak/keycloak-admin-client";
 import Cookies from "cookies";
 import { encode, getToken } from "next-auth/jwt";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]";
+import { authOptions } from "../../auth/[...nextauth]/route";
 
-export default async function handler(
+export async function POST(
   req: NextApiRequest,
   res: NextApiResponse
 ) {

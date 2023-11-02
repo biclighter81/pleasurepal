@@ -1,13 +1,14 @@
+'use client'
 import { useAppStore } from "@/stores/app.store";
 import { Transition } from "@headlessui/react";
 import { signIn, useSession } from "next-auth/react";
-import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NavbarItem } from "../../lib/types/app";
 import MobileProfile from "./mobile/MobileProfile";
 import { useFriendStore } from "@/stores/friend.store";
 import { useChatStore } from "@/stores/chat.store";
+import Link from "next/link";
 
 export default function Navbar() {
   const appStore = useAppStore();
@@ -26,6 +27,7 @@ export default function Navbar() {
     },
   ];
   const router = useRouter();
+  const pathname = usePathname()
 
   const genericHamburgerLine = `h-[3px] w-8 my-1 rounded-full bg-zinc-200 transition ease transform duration-300`;
 
@@ -55,9 +57,8 @@ export default function Navbar() {
           <div key={item.href}>
             <Link href={item.href}>
               <span
-                className={`uppercase font-bold text-sm ${
-                  item.href == router.pathname ? "text-primary-500" : null
-                } hover:text-primary-500 transition duration-300 ease-in-out cursor-pointer`}
+                className={`uppercase font-bold text-sm ${item.href == pathname ? "text-primary-500" : null
+                  } hover:text-primary-500 transition duration-300 ease-in-out cursor-pointer`}
               >
                 {item.name}
               </span>
@@ -73,23 +74,20 @@ export default function Navbar() {
             onClick={() => appStore.setMenu(!appStore.menu)}
           >
             <div
-              className={`${genericHamburgerLine} ${
-                appStore.menu
-                  ? "rotate-45 translate-y-[11px]  group-hover:opacity-100"
-                  : " group-hover:opacity-100"
-              }`}
+              className={`${genericHamburgerLine} ${appStore.menu
+                ? "rotate-45 translate-y-[11px]  group-hover:opacity-100"
+                : " group-hover:opacity-100"
+                }`}
             />
             <div
-              className={`${genericHamburgerLine} ${
-                appStore.menu ? "opacity-0" : "group-hover:opacity-100"
-              }`}
+              className={`${genericHamburgerLine} ${appStore.menu ? "opacity-0" : "group-hover:opacity-100"
+                }`}
             />
             <div
-              className={`${genericHamburgerLine} ${
-                appStore.menu
-                  ? "-rotate-45 -translate-y-[11px]  group-hover:opacity-100"
-                  : " group-hover:opacity-100"
-              }`}
+              className={`${genericHamburgerLine} ${appStore.menu
+                ? "-rotate-45 -translate-y-[11px]  group-hover:opacity-100"
+                : " group-hover:opacity-100"
+                }`}
             />
           </button>
           {/* Notification */}
@@ -111,9 +109,8 @@ export default function Navbar() {
         </div>
       </div>
       <div
-        className={`fixed top-20 left-0  w-full overflow-y-hidden  ${
-          appStore.menu ? "z-10 h-full bottom-0" : "-z-10"
-        }`}
+        className={`fixed top-20 left-0  w-full overflow-y-hidden  ${appStore.menu ? "z-10 h-full bottom-0" : "-z-10"
+          }`}
       >
         <Transition
           show={appStore.menu}
@@ -135,9 +132,8 @@ export default function Navbar() {
                 >
                   <div>
                     <h4
-                      className={`text-2xl font-semibold ${
-                        item.href == router.pathname && "text-primary-500"
-                      }`}
+                      className={`text-2xl font-semibold ${item.href == pathname && "text-primary-500"
+                        }`}
                     >
                       {item.name}
                     </h4>

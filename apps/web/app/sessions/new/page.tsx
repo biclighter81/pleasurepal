@@ -1,3 +1,4 @@
+'use client'
 import Button from "@/components/app/interaction/Button";
 import DarkInput from "@/components/app/interaction/DarkInput";
 import FriendSelector from "@/components/app/interaction/FriendSelector";
@@ -5,7 +6,7 @@ import { generateName } from "@/lib/name-generator";
 import { Friend } from "@/lib/types/friend";
 import { IconPlus } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function NewSession() {

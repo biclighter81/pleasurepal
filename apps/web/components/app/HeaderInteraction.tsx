@@ -1,3 +1,4 @@
+'use client'
 import { signIn, signOut, useSession } from "next-auth/react";
 import Button from "./interaction/Button";
 import ProfileAvatar from "./interaction/ProfileAvatar";

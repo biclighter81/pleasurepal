@@ -109,5 +109,5 @@ async function refreshToken(token: any) {
     };
   }
 }
-
-export default NextAuth(authOptions as any);
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
