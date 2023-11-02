@@ -1,6 +1,10 @@
+const path = require("path");
 const nextConfig = {
   reactStrictMode: false,
   output: "standalone",
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, "../../"),
+  },
   env: {
     NEXT_PUBLIC_DISCORD_IDENTIFICATION_URL:
       process.env.NODE_ENV === "production"
