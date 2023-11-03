@@ -3,7 +3,7 @@ import KeycloaAdminCli from "@keycloak/keycloak-admin-client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
-export default async function POST(
+/*export default async function POST(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -43,3 +43,4 @@ export default async function POST(
     res.status(500).json({ error: "Something went wrong" });
   }
 }
+*/

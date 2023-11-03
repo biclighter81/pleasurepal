@@ -5,7 +5,7 @@ import { encode, getToken } from "next-auth/jwt";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
-export async function POST(
+/*export async function POST(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -114,3 +114,4 @@ async function fetchDiscordUser(accessToken: string) {
   });
   return res.json();
 }
+*/

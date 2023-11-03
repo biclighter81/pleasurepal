@@ -3,7 +3,7 @@ import KeycloaAdminCli from "@keycloak/keycloak-admin-client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
-export async function GET(
+/*export async function GET(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -73,3 +73,4 @@ async function updateKCDiscordRefreshToken(
     }
   );
 }
+*/
