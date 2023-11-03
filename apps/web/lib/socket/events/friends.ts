@@ -1,20 +1,21 @@
 import { useFriendStore } from "@/stores/friend.store";
 import { getSession } from "next-auth/react";
 import { Socket } from "socket.io-client";
-
 export function listenFriendEvents(socket: Socket) {
   socket.emit("online");
   initFriendRequests();
-
-  socket.on("friend-online", (uid: string) => {
+  socket.on("friend-online", (friend: { uid: string, ack?: boolean }) => {
     useFriendStore.setState((state) => ({
-      onlineFriends: [...new Set([...state.onlineFriends, uid])],
+      onlineFriends: [...new Set([...state.onlineFriends, friend.uid])],
     }));
+    //return if this already was the ack postback
+    if (friend.ack) return;
+    socket.emit("ack-friend-online", { uid: friend.uid })
   });
-  socket.on("friend-offline", (data: { uid: string }) => {
+  socket.on("friend-offline", (friend: { uid: string }) => {
     useFriendStore.setState((state) => ({
       ...state,
-      onlineFriends: state.onlineFriends.filter((uid) => uid !== data.uid),
+      onlineFriends: state.onlineFriends.filter((uid) => uid !== friend.uid),
     }));
   });
   socket.on("friendship-request", (data: { from: string; to: string }) => {

@@ -15,7 +15,6 @@ export default function Home() {
   );*/
   return (
     <>
-      <BlobTop />
       <div className='flex flex-col lg:flex-row lg:justify-start items-center'>
         {/* small device pleasurepal header */}
         <div className='w-full flex justify-center lg:hidden mt-12'>
@@ -68,8 +67,11 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <div className='flex-grow'>
+          <BlobTop />
+        </div>
       </div>
-       {/*Our Platfrom section*/}
+      {/*Our Platfrom section*/}
       <div className='mx-10 my-24'>
         <div className='mb-8'>
           <h1 className='uppercase font-black text-5xl'>Our Platform</h1>

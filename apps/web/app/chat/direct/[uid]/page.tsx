@@ -1,9 +1,12 @@
-import { getSession, useSession } from "next-auth/react";
-import { useSearchParams, useRouter } from "next/navigation";
+'use client';
+import { getSession } from "next-auth/react";
+import { useRouter, useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import dayjs from "dayjs";
 import {
+    IconCheck,
+    IconChecks,
     IconChevronDown,
     IconChevronLeft,
     IconSend,
@@ -21,11 +24,11 @@ export default function DirectChat() {
     const [newMessages, setNewMessages] = useState<number>(0);
     const [isAtBottom, setIsAtBottom] = useState<boolean>(true);
     const [withinThreshold, setWithinThreshold] = useState<boolean>(true);
-    const { data: session } = useSession();
-    const searchParams = useSearchParams()
-    const friendUid = searchParams.get('uid')
+    const params = useParams()
+    const { uid: friendUid } = params
     const chatRef = useRef<InfiniteScroll>(null);
-    const router = useRouter()
+    const router = useRouter();
+    const chatStore = useChatStore()
 
     const { data: friend, isLoading: friendLoading } = useSWR(
         friendUid && `friends/friend/${friendUid}`,
@@ -54,25 +57,25 @@ export default function DirectChat() {
         const unsub = useChatStore.subscribe(
             (state) => state.messages,
             (msg, prevMsg) => {
-                msg
+                const newMessages = msg
                     .filter(
                         (msg) =>
                             msg.conversation.id === conversation?.id &&
                             !prevMsg.some((m) => m.id === msg.id)
                     )
-                    .forEach((msg) => {
-                        setNewMessages((prev) => prev + 1);
-                        mutate((prev) => {
-                            if (!prev)
-                                return [
-                                    {
-                                        messages: [msg],
-                                    },
-                                ];
-                            prev[0].messages.splice(0, 0, msg);
-                            return [...prev];
-                        });
+                newMessages.forEach((msg) => {
+                    setNewMessages((prev) => prev + 1);
+                    mutate((prev) => {
+                        if (!prev)
+                            return [
+                                {
+                                    messages: [msg],
+                                },
+                            ];
+                        prev[0].messages.splice(0, 0, msg);
+                        return [...prev];
                     });
+                });
             }
         );
         return () => {
@@ -97,6 +100,22 @@ export default function DirectChat() {
         if (!data) return [];
         return data.flatMap((d) => d.messages);
     }, [data]);
+
+    const friendLastReadTimestamp = useMemo(() => {
+        if (!conversation?.participants?.length) return null;
+        const friend = conversation.participants.find((p: any) => p.participantId == friendUid)
+        const readState = chatStore.conversationReadState[conversation.id]
+        const lastReadTimestamp = readState && readState[friendUid as string]
+        return lastReadTimestamp ?? friend?.lastReadTimestamp
+    }, [conversation, chatStore.conversationReadState])
+
+    function readState(sendAt: Date) {
+        if (!friendLastReadTimestamp) return <></>;
+        if (dayjs(sendAt).isBefore(friendLastReadTimestamp)) {
+            return (<IconChecks className="w-4 h-4" />)
+        }
+        return <IconCheck className="w-4 h-4" />
+    }
 
     async function sendMessage() {
         try {
@@ -221,25 +240,27 @@ export default function DirectChat() {
                             inverse={true}
                             ref={chatRef}
                         >
-                            {messages.map((msg, i) => (
-                                <div
-                                    key={i}
-                                    className={`flex w-full ${msg.sender == friendUid ? "justify-start " : "justify-end "
-                                        }`}
-                                >
+                            {messages.map((msg, i) => {
+                                return (
                                     <div
-                                        className={`flex flex-col w-fit rounded-lg min-w-[150px] ${msg.sender == friendUid ? "bg-blue-500" : "bg-primary-500"
-                                            } px-4 py-2`}
+                                        key={i}
+                                        className={`flex w-full ${msg.sender == friendUid ? "justify-start " : "justify-end "
+                                            }`}
                                     >
-                                        <p className="text-sm">{msg.content}</p>
-                                        <div className="flex flex-grow justify-end">
-                                            <span className="text-xs">
-                                                {dayjs(msg.sendAt).format("hh:mm A")}
-                                            </span>
+                                        <div
+                                            className={`flex flex-col w-fit rounded-lg min-w-[150px] ${msg.sender == friendUid ? "bg-blue-500" : "bg-primary-500"
+                                                } px-4 py-2`}
+                                        >
+                                            <p className="text-sm">{msg.content}</p>
+                                            <div className="flex flex-grow justify-end">
+                                                <div className="text-xs flex space-x-2">
+                                                    <p>{dayjs(msg.sendAt).format("hh:mm A")}</p>
+                                                    {msg.sender != friendUid && readState(msg.sendAt)}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
+                                    </div>)
+                            })}
                         </InfiniteScroll>
                     </div>
                     <div className="mt-12">

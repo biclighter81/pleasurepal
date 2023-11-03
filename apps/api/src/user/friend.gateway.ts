@@ -1,5 +1,6 @@
 import {
   ConnectedSocket,
+  MessageBody,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -19,7 +20,7 @@ export class FriendGateway {
   constructor(
     @Inject(forwardRef(() => FriendService))
     private readonly friendSrv: FriendService,
-  ) {}
+  ) { }
 
   @WebSocketServer()
   wss: Server;
@@ -28,6 +29,12 @@ export class FriendGateway {
   async handleOnline(@ConnectedSocket() client: Socket) {
     const { sub } = client.handshake.auth;
     this.emitOnline(sub);
+  }
+
+  @SubscribeMessage('ack-friend-online')
+  async handleAckOnline(@ConnectedSocket() client: Socket, @MessageBody() friend: { uid: string }) {
+    const { sub } = client.handshake.auth;
+    this.wss.to(friend.uid).emit('friend-online', { uid: sub, ack: true })
   }
 
   async emitOnline(sub: string) {

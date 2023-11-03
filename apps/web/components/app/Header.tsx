@@ -5,7 +5,6 @@ import HeaderInteraction from "./HeaderInteraction";
 import Link from "next/link";
 
 export default function Header() {
-  console.log('header')
   return (
     <div className="bg-dark w-full h-20 flex items-center px-8 py-4 z-10">
       <div className="relative h-12 w-32">

@@ -13,6 +13,7 @@ export const initSocket = async (withCredentials?: boolean) => {
   });
   socket.auth = {
     token: session?.access_token,
+    uid: session?.sub
   };
   socket.connect();
   socket.on("error", (err) => {

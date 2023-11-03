@@ -101,6 +101,7 @@ export default function Friends() {
             {friends.map((friend: any) => {
               const friendUid =
                 friend.from == session?.sub ? friend.to : friend.from;
+              const isOnline = friendStore.onlineFriends.includes(friendUid);
               return (
                 <div
                   key={friendUid}
@@ -110,7 +111,7 @@ export default function Friends() {
                     <img src={getAvatar(friendUid).toDataUriSync()} />
                   </div>
                   <div
-                    className={`w-2 h-2 ${friendStore.onlineFriends.includes(friendUid)
+                    className={`w-2 h-2 ${isOnline
                       ? "bg-green-400"
                       : "bg-red-400"
                       } rounded-full animate-pulse`}

@@ -30,7 +30,8 @@ export class SocketGateway {
   constructor(
     @InjectRepository(UserFriendshipRequest)
     private readonly userFriendshipRequestRepo: Repository<UserFriendshipRequest>,
-  ) {}
+  ) { }
+
 
   @SubscribeMessage('connect')
   async handleConnection(@ConnectedSocket() client: Socket) {
@@ -55,6 +56,7 @@ export class SocketGateway {
     @MessageBody() payload: { uid: string },
   ) {
     const { sub } = client.handshake.auth;
+    console.log(sub, 'online')
     this.server.to(payload.uid).emit('friend-online', {
       uid: sub,
       isResponse: true,
@@ -65,7 +67,7 @@ export class SocketGateway {
   async handleDeviceAdded(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: DeviceInfo,
-  ) {}
+  ) { }
 
   @SubscribeMessage('device-removed')
   async handleDeviceRemoved(

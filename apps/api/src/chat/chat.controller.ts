@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Post, HttpException, Body, Query } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Post, HttpException, Body, Query, HttpStatus, Put } from '@nestjs/common';
 import { AuthenticatedUser, AuthGuard } from 'nest-keycloak-connect';
 import { ConversationNotFoundError } from '../lib/errors/chat';
 import { FriendshipNotExists } from '../lib/errors/friend';

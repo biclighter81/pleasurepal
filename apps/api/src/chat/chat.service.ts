@@ -55,12 +55,15 @@ export class ChatService {
       }
       return await this.createDirectConversation(requesterUid, uid);
     }
-    return this.conversationRepo.findOne({
+    const conversation = await this.conversationRepo.findOne({
       where: {
         id: conversations[0].conversationId,
       },
       relations: ['participants'],
     });
+    const friend = conversation.participants.find((p) => p.participantId != requesterUid)
+    await this.markRead(conversation.id, requesterUid, [friend.participantId])
+    return conversation;
 
   }
 
@@ -72,7 +75,7 @@ export class ChatService {
           participantId: uid,
         }
       },
-      select: ['id']
+      select: ['id', 'type']
     });
     if (!conversation) {
       throw new ConversationNotFoundError('Conversation not found!');
@@ -180,13 +183,25 @@ export class ChatService {
       },
       relations: ['participants'],
     });
-    fullConversation.participants.forEach((participant) => {
+    for (const participant of fullConversation.participants) {
       if (participant.participantId !== requesterUid) {
         this.chatGateway.wss
           .to(participant.participantId)
-          .emit('message', messageEntity);
+          .timeout(3000)
+          .emit('message', messageEntity, (err, res) => {
+            if (!err && res[0]?.read) {
+              this.markRead(conversationId, participant.participantId, [requesterUid])
+            }
+          })
       }
-    });
+    };
     return messageEntity;
+  }
+
+  async markRead(conversationId: string, uid: string, notify: string[] = []) {
+    await this.conversationRepo.query('update "conversation_participants" set "lastReadTimestamp" = to_timestamp($3) where "conversationId" = $1 and "participantId" = $2', [conversationId, uid, new Date().getTime() / 1000])
+    for (const notifyUid of notify) {
+      this.chatGateway.wss.to(notifyUid).emit('conversation-read', { conversationId, participantId: uid })
+    }
   }
 }

@@ -1,11 +1,11 @@
 'use client'
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { fetcher } from '@/lib/fetcher';
 
 export default function Profile() {
-  const params = useSearchParams()
-  const uid = params.get('uid')
+  const params = useParams()
+  const { uid } = params
   const { data, isLoading, mutate } = useSWR(
     uid && `friends/friend/${uid}`,
     fetcher
