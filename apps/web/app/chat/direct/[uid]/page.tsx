@@ -110,8 +110,7 @@ export default function DirectChat() {
     }, [conversation, chatStore.conversationReadState])
 
     function readState(sendAt: Date) {
-        if (!friendLastReadTimestamp) return <></>;
-        if (dayjs(sendAt).isBefore(friendLastReadTimestamp)) {
+        if (friendLastReadTimestamp && dayjs(sendAt).isBefore(friendLastReadTimestamp)) {
             return (<IconChecks className="w-4 h-4" />)
         }
         return <IconCheck className="w-4 h-4" />
