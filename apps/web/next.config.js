@@ -16,7 +16,7 @@ const nextConfig = {
     NEXT_PUBLIC_WS_URL:
       process.env.NODE_ENV === "production"
         ? "ws.pleasurepal.de"
-        : "localhost:80",
+        : "localhost:8888",
     NEXT_PUBLIC_IS_PRODUCTION:
       process.env.NODE_ENV === "production" ? "true" : "false",
   },

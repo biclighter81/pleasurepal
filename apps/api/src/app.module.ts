@@ -18,6 +18,8 @@ import { SessionModule } from './session/session.module';
 import { AppGateway } from './app.gateway';
 import { FriendService } from './user/friend.service';
 import { UserFriendshipRequest } from './user/entities/user-friendship-request.entity';
+import { PassportModule } from '@nestjs/passport';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -47,12 +49,6 @@ import { UserFriendshipRequest } from './user/entities/user-friendship-request.e
         },
       }),
     }),
-    KeycloakConnectModule.register({
-      authServerUrl: process.env.KEYCLOAK_URL,
-      realm: process.env.KEYCLOAK_REALM,
-      clientId: process.env.KEYCLOAK_CLIENT_ID,
-      secret: process.env.KEYCLOAK_CLIENT_SECRET,
-    }),
     ScheduleModule.forRoot(),
     SlashCommandsModule,
     UserModule,
@@ -62,6 +58,7 @@ import { UserFriendshipRequest } from './user/entities/user-friendship-request.e
     ChatModule,
     DeviceModule,
     SessionModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway, FriendService],

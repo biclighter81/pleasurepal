@@ -148,6 +148,7 @@ export default function DirectChat() {
 
     return (
         <>
+        {JSON.stringify(friendLastReadTimestamp)}
             <div
                 className="flex space-x-2 items-center ml-6 mt-3 hover:cursor-pointer"
                 onClick={() => router.push("/profile/friends")}

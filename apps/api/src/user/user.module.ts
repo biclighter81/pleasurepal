@@ -6,6 +6,7 @@ import { FriendController } from './friend.controller';
 import { FriendService } from './friend.service';
 import { UserController } from './user.controller';
 import { FriendGateway } from './friend.gateway';
+import { PassportModule } from '@nestjs/passport';
 
 // eslint-disable-next-line
 const dotenv = require('dotenv');

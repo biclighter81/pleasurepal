@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthenticatedUser, AuthGuard } from 'nest-keycloak-connect';
+import { AuthenticatedUser } from 'nest-keycloak-connect';
 import {
   FriendshipAlreadyExists,
   FriendshipRequestAlreadyExists,
@@ -18,6 +18,7 @@ import {
 import { JWTKeycloakUser } from '../lib/interfaces/keycloak';
 import { FriendService } from './friend.service';
 import { FriendGateway } from './friend.gateway';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('friends')
 export class FriendController {
@@ -26,7 +27,6 @@ export class FriendController {
     private readonly friendGateway: FriendGateway,
   ) {}
 
-  @UseGuards(AuthGuard)
   @Post('request')
   async requestFriendship(
     @AuthenticatedUser() user: JWTKeycloakUser,
@@ -53,13 +53,12 @@ export class FriendController {
     }
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard('oidc'))
   @Get('')
   async getFriends(@AuthenticatedUser() user: JWTKeycloakUser) {
     return this.friendSrv.getFriends(user.sub);
   }
 
-  @UseGuards(AuthGuard)
   @Get('friend/:uid')
   async getFriend(
     @AuthenticatedUser() user: JWTKeycloakUser,
@@ -68,13 +67,11 @@ export class FriendController {
     return this.friendSrv.getFriend(user.sub, uid);
   }
 
-  @UseGuards(AuthGuard)
   @Get('requests')
   async getFriendshipRequests(@AuthenticatedUser() user: JWTKeycloakUser) {
     return this.friendSrv.getPending(user.sub);
   }
 
-  @UseGuards(AuthGuard)
   @Post('accept')
   async acceptFriendshipRequest(
     @AuthenticatedUser() user: JWTKeycloakUser,
@@ -99,7 +96,6 @@ export class FriendController {
     }
   }
 
-  @UseGuards(AuthGuard)
   @Post('reject')
   async rejectFriendshipRequest(
     @AuthenticatedUser() user: JWTKeycloakUser,
@@ -124,7 +120,6 @@ export class FriendController {
     }
   }
 
-  @UseGuards(AuthGuard)
   @Post('block')
   async blockUser(
     @AuthenticatedUser() user: JWTKeycloakUser,
