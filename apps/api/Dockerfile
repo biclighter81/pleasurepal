@@ -5,7 +5,7 @@ WORKDIR /app
 RUN npm install -g pnpm
 RUN npm install -g turbo
 COPY . .
-RUN turbo prune --scope=express --docker
+RUN turbo prune --scope=api --docker
 
 FROM node:alpine AS builder
 RUN apk add --no-cache libc6-compat
@@ -20,7 +20,7 @@ RUN pnpm install
 # Build the project
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
-RUN turbo run build --filter=express...
+RUN turbo run build --filter=api...
 
 FROM node:alpine AS runner
 WORKDIR /app
