@@ -12,7 +12,6 @@ import {
   User,
   UserSelectMenuInteraction,
 } from 'discord.js';
-import { User_PleasureSession } from 'src/session/entities/user_plesure_session.join-entity';
 type ComponentsType = BaseMessageOptions['components'];
 type InteractionTimeoutType =
   | UserSelectMenuInteraction<CacheType>

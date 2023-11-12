@@ -19,7 +19,7 @@ export async function getKCUserByDiscordId(
       return undefined;
     }
     return res.data[0];
-  } catch (err) {
+  } catch (err: any) {
     console.error(err.response.data);
     throw err;
   }
@@ -43,7 +43,7 @@ export async function getDiscordUidByKCId(
       return undefined;
     }
     return res.data.attributes.discord_uid[0];
-  } catch (err) {
+  } catch (err: any) {
     console.error(err.response.data);
     throw err;
   }
@@ -55,8 +55,8 @@ export async function getKCToken(): Promise<string> {
       `${process.env.KEYCLOAK_URL}/realms/pleasurepal/protocol/openid-connect/token`,
       {
         grant_type: 'client_credentials',
-        client_id: process.env.KEYCLOAK_CLIENT_ID,
-        client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
+        client_id: process.env.OIDC_CLIENT_ID,
+        client_secret: process.env.OIDC_CLIENT_SECRET,
       },
       {
         headers: {
@@ -67,7 +67,7 @@ export async function getKCToken(): Promise<string> {
 
     const data = res.data;
     return data.access_token;
-  } catch (err) {
+  } catch (err: any) {
     console.error(err.response.data);
     throw err;
   }
