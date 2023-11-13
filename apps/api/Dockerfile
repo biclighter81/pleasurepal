@@ -26,4 +26,4 @@ FROM node:alpine AS runner
 WORKDIR /app
 
 COPY --from=builder /app .
-CMD node apps/express/dist/main.js
+CMD node apps/api/dist/main.js
