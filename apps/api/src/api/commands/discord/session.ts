@@ -1,12 +1,12 @@
 import { ButtonInteraction, CacheType, CommandInteraction, ComponentType, SlashCommandBuilder } from "discord.js"
-import { DiscordSessionService } from "../../../api/services/DiscordSessionService";
-import { SessionService } from "../../../api/services/SessionService";
-import { PleasureSession } from "../../../lib/entities/pleasure-session.entity";
-import { SESSION_CREATION_COMPONENTS } from "../../../lib/interaction-helper";
-import { KeycloakUser } from "../../../lib/interfaces/keycloak";
-import { getKCUserByDiscordId } from "../../../lib/keycloak";
-import TYPES from "../../../lib/symbols";
-import { getContainer } from "../../../main";
+import { DiscordSessionService } from "@/api/services/DiscordSessionService";
+import { SessionService } from "@/api/services/SessionService";
+import { PleasureSession } from "@/lib/entities/pleasure-session.entity";
+import { SESSION_CREATION_COMPONENTS } from "@/lib/interaction-helper";
+import { KeycloakUser } from "@/lib/interfaces/keycloak";
+import { getKCUserByDiscordId } from "@/lib/keycloak";
+import TYPES from "@/lib/symbols";
+import { getContainer } from "@/main";
 
 const container = getContainer();
 const sessionSrv = container.get<SessionService>(TYPES.SessionService);

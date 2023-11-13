@@ -1,11 +1,11 @@
 import { Container, injectable } from "inversify";
 import { Server, Socket as IOSocket } from "socket.io";
 import { createClient } from "redis";
-import { env } from "../../env";
+import { env } from "@/env";
 import { createAdapter } from "@socket.io/redis-adapter";
 import debug from "debug";
 import { FriendEventHandler } from "../events/FriendEventHandler";
-import { IEventHandler } from "src/lib/interfaces/app";
+import { IEventHandler } from "@/lib/interfaces/app";
 
 @injectable()
 export class Socket {

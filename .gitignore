@@ -222,3 +222,4 @@ next.config.original.js
 
 # Sentry
 next.config.original.js
+.turbo

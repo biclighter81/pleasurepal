@@ -1,8 +1,8 @@
 import { inject, injectable } from "inversify";
-import { UserFriendshipRequest } from "../../lib/entities/user-friendship-request.entity";
-import { FriendshipAlreadyExists, FriendshipRequestAlreadyExists, FriendshipRequestBlocked, FriendshipRequestNotFound } from "../../lib/errors/friend";
-import { getKCUserById } from "../../lib/keycloak";
-import TYPES from "../../lib/symbols";
+import { UserFriendshipRequest } from "@/lib/entities/user-friendship-request.entity";
+import { FriendshipAlreadyExists, FriendshipRequestAlreadyExists, FriendshipRequestBlocked, FriendshipRequestNotFound } from "@/lib/errors/friend";
+import { getKCUserById } from "@/lib/keycloak";
+import TYPES from "@/lib/symbols";
 import { IsNull, Repository } from "typeorm";
 import { Socket } from "../services/Socket";
 

@@ -1,5 +1,5 @@
 import { Container } from "inversify";
-import TYPES from "../../lib/symbols";
+import TYPES from "@/lib/symbols";
 import { FriendService } from "../services/FriendService";
 import { Socket } from "socket.io";
 

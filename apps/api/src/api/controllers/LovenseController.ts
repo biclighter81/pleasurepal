@@ -1,9 +1,9 @@
 import { inject } from "inversify";
 import { PARAMETER_TYPE, controller, httpPost, interfaces, params, request, requestBody, response } from "inversify-express-utils";
-import TYPES from "../../lib/symbols";
+import TYPES from "@/lib/symbols";
 import { LovenseService } from "../services/LovenseService";
 import { DiscordService } from "../services/DiscordService";
-import { getKCUserByDiscordId } from "../../lib/keycloak";
+import { getKCUserByDiscordId } from "@/lib/keycloak";
 import { Request, Response } from "express";
 
 @controller("/lovense")

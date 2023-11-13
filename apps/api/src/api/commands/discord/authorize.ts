@@ -1,12 +1,12 @@
 import { CacheType, CommandInteraction, ComponentType, SlashCommandBuilder, User } from 'discord.js'
-import { AUTHORIZE_SESSION_USER_BUTTON_COMPONENTS, AUTHORIZE_SESSION_USER_SELECT_COMPONENTS } from '../../../lib/interaction-helper';
-import { getKCUserByDiscordId } from '../../../lib/keycloak';
-import { getContainer } from '../../../main';
-import { SessionService } from '../../../api/services/SessionService';
-import TYPES from '../../../lib/symbols';
-import { DiscordSessionService } from '../../../api/services/DiscordSessionService';
-import { PleasureSession } from '../../../lib/entities/pleasure-session.entity';
-import { DiscordService } from '../../../api/services/DiscordService';
+import { AUTHORIZE_SESSION_USER_BUTTON_COMPONENTS, AUTHORIZE_SESSION_USER_SELECT_COMPONENTS } from '@/lib/interaction-helper';
+import { getKCUserByDiscordId } from '@/lib/keycloak';
+import { getContainer } from '@/main';
+import { SessionService } from '@/api/services/SessionService';
+import TYPES from '@/lib/symbols';
+import { DiscordSessionService } from '@/api/services/DiscordSessionService';
+import { PleasureSession } from '@/lib/entities/pleasure-session.entity';
+import { DiscordService } from '@/api/services/DiscordService';
 
 const container = getContainer();
 const sessionSrv = container.get<SessionService>(TYPES.SessionService);

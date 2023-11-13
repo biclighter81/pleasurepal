@@ -1,8 +1,8 @@
 import { CommandInteraction, SlashCommandBuilder } from "discord.js"
-import { SessionService } from "../../../api/services/SessionService";
-import { getKCUserByDiscordId } from "../../../lib/keycloak";
-import TYPES from "../../../lib/symbols";
-import { getContainer } from "../../../main";
+import { SessionService } from "@/api/services/SessionService";
+import { getKCUserByDiscordId } from "@/lib/keycloak";
+import TYPES from "@/lib/symbols";
+import { getContainer } from "@/main";
 
 const container = getContainer();
 const sessionSrv = container.get<SessionService>(TYPES.SessionService);

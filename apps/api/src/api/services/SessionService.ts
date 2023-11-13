@@ -1,11 +1,11 @@
 import { inject, injectable } from "inversify";
-import { PleasureSession } from "../../lib/entities/pleasure-session.entity";
-import { User_PleasureSession } from "../../lib/entities/user_plesure_session.entity";
-import TYPES from "../../lib/symbols";
+import { PleasureSession } from "@/lib/entities/pleasure-session.entity";
+import { User_PleasureSession } from "@/lib/entities/user_plesure_session.entity";
+import TYPES from "@/lib/symbols";
 import { In, IsNull, Repository } from "typeorm";
 import { ChatService } from "./ChatService";
-import { generateName } from "../../lib/name-generator";
-import { NoSessionFoundError } from "../../lib/errors/session";
+import { generateName } from "@/lib/name-generator";
+import { NoSessionFoundError } from "@/lib/errors/session";
 import { Socket } from "../services/Socket";
 
 @injectable()

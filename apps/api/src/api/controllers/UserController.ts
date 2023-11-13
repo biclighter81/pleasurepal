@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PARAMETER_TYPE, controller, httpGet, interfaces, params, request, response } from "inversify-express-utils";
-import TYPES from "../../lib/symbols";
-import { searchKCUser } from "../../lib/keycloak";
+import TYPES from "@/lib/symbols";
+import { searchKCUser } from "@/lib/keycloak";
 
 @controller("/user")
 export class UserController implements interfaces.Controller {

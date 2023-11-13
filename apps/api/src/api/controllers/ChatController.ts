@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import { inject } from "inversify";
 import { PARAMETER_TYPE, controller, httpGet, httpPost, interfaces, params, request, requestBody, response } from "inversify-express-utils";
-import { JWTKeycloakUser } from "../../lib/interfaces/keycloak";
-import TYPES from "../../lib/symbols";
+import { JWTKeycloakUser } from "@/lib/interfaces/keycloak";
+import TYPES from "@/lib/symbols";
 import { ChatService } from "../services/ChatService";
-import { ConversationNotFoundError } from "../../lib/errors/chat";
-import { FriendshipNotExists } from "../../lib/errors/friend";
+import { ConversationNotFoundError } from "@/lib/errors/chat";
+import { FriendshipNotExists } from "@/lib/errors/friend";
 
 @controller("/chat")
 export class ChatController implements interfaces.Controller {

@@ -11,7 +11,10 @@
         "alwaysStrict": true,
         "noImplicitReturns": false,
         "noFallthroughCasesInSwitch": true,
-        "baseUrl": ".",
+        "baseUrl": "./",
+        "paths": {
+          "@/*": ["src/*"]
+        },
         "allowSyntheticDefaultImports": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
@@ -21,7 +24,11 @@
         "module": "CommonJS",
         "target": "ES5",
         "lib": ["ES6"],
+        "skipLibCheck": true
     },
+    "ts-node": {
+      "require": ["tsconfig-paths/register"]
+  },
     "include": ["src/**/*"],
   "exclude": ["node_modules", "**/node_modules/*", "**/*.spec.ts"]
 }

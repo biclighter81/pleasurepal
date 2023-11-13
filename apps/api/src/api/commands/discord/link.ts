@@ -1,11 +1,11 @@
 import { CommandInteraction, ComponentType, SlashCommandBuilder } from "discord.js"
-import { DiscordService } from "../../../api/services/DiscordService";
-import { LovenseService } from "../../../api/services/LovenseService";
-import { ALREADY_LINKED_COMPONENTS, interactionTimeout } from "../../../lib/interaction-helper";
-import { getKCUserByDiscordId } from "../../../lib/keycloak";
-import { LOVENSE_ACCOUNT_ALREADY_LINKED, LOVENSE_ACCOUNT_UNLINKED, NEED_TO_REGISTER_PLEASUREPAL } from "../../../lib/reply-messages";
-import TYPES from "../../../lib/symbols";
-import { getContainer } from "../../../main";
+import { DiscordService } from "@/api/services/DiscordService";
+import { LovenseService } from "@/api/services/LovenseService";
+import { ALREADY_LINKED_COMPONENTS, interactionTimeout } from "@/lib/interaction-helper";
+import { getKCUserByDiscordId } from "@/lib/keycloak";
+import { LOVENSE_ACCOUNT_ALREADY_LINKED, LOVENSE_ACCOUNT_UNLINKED, NEED_TO_REGISTER_PLEASUREPAL } from "@/lib/reply-messages";
+import TYPES from "@/lib/symbols";
+import { getContainer } from "@/main";
 
 const container = getContainer();
 const lovenseSrv = container.get<LovenseService>(TYPES.LovenseService);

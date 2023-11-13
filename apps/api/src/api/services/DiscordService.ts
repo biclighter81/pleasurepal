@@ -1,11 +1,11 @@
 import { CommandInteraction, User as DiscordUser, Message } from "discord.js";
 import { inject, injectable } from "inversify";
-import { LovenseHeartbeat } from "../../lib/entities/lovense-heartbeat.entity";
-import { buildLovenseQrCodeEmbed } from "../../lib/interaction-helper";
-import { QRCodeResponse } from "../../lib/interfaces/lovense";
-import { getKCUserByDiscordId } from "../../lib/keycloak";
-import TYPES from "../../lib/symbols";
-import { LOVENSE_HEARTBEAT_INTERVAL } from "../../lib/utils";
+import { LovenseHeartbeat } from "@/lib/entities/lovense-heartbeat.entity";
+import { buildLovenseQrCodeEmbed } from "@/lib/interaction-helper";
+import { QRCodeResponse } from "@/lib/interfaces/lovense";
+import { getKCUserByDiscordId } from "@/lib/keycloak";
+import TYPES from "@/lib/symbols";
+import { LOVENSE_HEARTBEAT_INTERVAL } from "@/lib/utils";
 import { Repository } from "typeorm";
 import { Discord } from "../services/Discord";
 

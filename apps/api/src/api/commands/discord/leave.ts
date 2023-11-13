@@ -1,10 +1,10 @@
 import { CacheType, CommandInteraction, SlashCommandBuilder } from "discord.js"
-import { LEAVE_INTERACTION_CONFIRM_COMPONENTS } from "../../../lib/interaction-helper";
-import { getKCUserByDiscordId } from "../../../lib/keycloak";
-import { getContainer } from "../../../main";
-import { SessionService } from "../../../api/services/SessionService";
-import TYPES from "../../../lib/symbols";
-import { PleasureSession } from "../../../lib/entities/pleasure-session.entity";
+import { LEAVE_INTERACTION_CONFIRM_COMPONENTS } from "@/lib/interaction-helper";
+import { getKCUserByDiscordId } from "@/lib/keycloak";
+import { getContainer } from "@/main";
+import { SessionService } from "@/api/services/SessionService";
+import TYPES from "@/lib/symbols";
+import { PleasureSession } from "@/lib/entities/pleasure-session.entity";
 
 const container = getContainer();
 const sessionSrv = container.get<SessionService>(TYPES.SessionService);

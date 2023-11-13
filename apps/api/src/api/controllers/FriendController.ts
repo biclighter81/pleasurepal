@@ -1,10 +1,10 @@
 import { inject } from "inversify";
 import { PARAMETER_TYPE, controller, httpGet, httpPost, interfaces, params, request, response } from "inversify-express-utils";
-import TYPES from "../../lib/symbols";
+import TYPES from "@/lib/symbols";
 import { FriendService } from "../services/FriendService";
 import { Request, Response } from "express";
-import { JWTKeycloakUser } from "../../lib/interfaces/keycloak";
-import { FriendshipAlreadyExists, FriendshipRequestAlreadyExists, FriendshipRequestBlocked, FriendshipRequestNotFound } from "../../lib/errors/friend";
+import { JWTKeycloakUser } from "@/lib/interfaces/keycloak";
+import { FriendshipAlreadyExists, FriendshipRequestAlreadyExists, FriendshipRequestBlocked, FriendshipRequestNotFound } from "@/lib/errors/friend";
 
 @controller("/friends")
 export class FriendController implements interfaces.Controller {

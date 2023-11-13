@@ -1,6 +1,6 @@
 import { Client, Collection, CommandInteraction, Events, REST, Routes, SlashCommandBuilder } from "discord.js";
 import { injectable } from "inversify";
-import { env } from "../../env";
+import { env } from "@/env";
 import fs from 'fs';
 import path from 'path';
 import debug from "debug";

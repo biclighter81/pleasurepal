@@ -1,9 +1,9 @@
 import { inject } from "inversify";
 import { controller, httpPost, interfaces, request, requestBody } from "inversify-express-utils";
-import TYPES from "../../lib/symbols";
+import TYPES from "@/lib/symbols";
 import { DeviceService } from "../services/DeviceService";
 import { Request } from "express";
-import { JWTKeycloakUser } from "../../lib/interfaces/keycloak";
+import { JWTKeycloakUser } from "@/lib/interfaces/keycloak";
 
 @controller("/device")
 export class DeviceController implements interfaces.Controller {

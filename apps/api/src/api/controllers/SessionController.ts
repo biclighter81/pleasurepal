@@ -1,10 +1,10 @@
 import { inject } from "inversify";
 import { PARAMETER_TYPE, controller, httpGet, httpPost, interfaces, params, request, requestBody, response } from "inversify-express-utils";
-import TYPES from "../../lib/symbols";
+import TYPES from "@/lib/symbols";
 import { SessionService } from "../services/SessionService";
 import { Request, Response } from "express";
-import { JWTKeycloakUser } from "../../lib/interfaces/keycloak";
-import { NoSessionFoundError } from "../../lib/errors/session";
+import { JWTKeycloakUser } from "@/lib/interfaces/keycloak";
+import { NoSessionFoundError } from "@/lib/errors/session";
 import { DiscordSessionService } from "../services/DiscordSessionService";
 
 @controller("/session")
