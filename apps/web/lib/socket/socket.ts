@@ -9,7 +9,7 @@ export const initSocket = async (withCredentials?: boolean) => {
   const session = await getSession();
   const socket = io(process.env.NEXT_PUBLIC_WS_URL!, {
     autoConnect: false,
-    withCredentials: withCredentials,
+    //withCredentials: withCredentials,
   });
   socket.auth = {
     token: session?.access_token,

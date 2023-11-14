@@ -20,7 +20,6 @@ export class Socket {
         const io = new Server({
             cors: {
                 origin: env.isDevelopment ? '*' : env.app.allowedOrigin,
-                credentials: env.isProduction
             },
         })
         const pubClient = createClient({ url: env.redis.url });
