@@ -3,6 +3,7 @@ import { env } from "./env"
 import debug from "debug"
 
 const log = debug('datasource')
+log('reading entites from ', env.app.dirs.entities)
 const AppDataSource = new DataSource({
     type: process.env.DB_TYPE as any,
     host: process.env.DB_HOST,
@@ -10,7 +11,7 @@ const AppDataSource = new DataSource({
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    entities: env.app.dirs.entites,
+    entities: env.app.dirs.entities,
     synchronize: env.isDevelopment
 })
 AppDataSource.initialize()
