@@ -16,7 +16,7 @@ export const env = {
     isDevelopment: process.env.NODE_ENV === 'development',
     app: {
         dirs: {
-            entities: ['src/lib/entities/**/*.{ts,js}', 'dist/lib/entities/**/*.{ts,js}'],
+            entities: ['src/lib/entities/**/*.{ts,js}', 'lib/entities/**/*.{ts,js}'],
             discordCommands: getOsPaths('DISCORD_COMMANDS'),
         },
         allowedOrigin: process.env['ALLOWED_ORIGIN'],
