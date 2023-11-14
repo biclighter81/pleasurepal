@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "build": "tsc -p .",
+    "build": "tsc -p . && tsc-alias",
     "start": "node dist/main.js",
     "dev": "nodemon src/main.ts"
   },
@@ -41,6 +41,7 @@
     "@types/multer": "^1.4.9",
     "nodemon": "^3.0.1",
     "ts-node": "^10.9.1",
+    "tsc-alias": "^1.8.8",
     "tslib": "^2.6.2",
     "typescript": "^5.2.2"
   }
