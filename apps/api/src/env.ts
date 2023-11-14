@@ -19,6 +19,7 @@ export const env = {
             entites: getOsPaths('ENTITIES'),
             discordCommands: getOsPaths('DISCORD_COMMANDS'),
         },
+        allowedOrigin: process.env['ALLOWED_ORIGIN'],
     },
     oidc: {
         issuerBaseURL: process.env['OIDC_ISSUER'],
